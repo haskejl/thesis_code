@@ -40,16 +40,18 @@ def mutation_step(X, Y):
     sqrt_h_M = np.sqrt(h/M)
     for i in range(1,M):
         Y_prime[i] = Y_prime[i-1] + h_M_alpha*(nu-Y_prime[i-1])+sqrt_h_M*calc_psi(Y_prime[i-1])*np.random.normal()
-        X_prime[i] = X_prime[i-1] + h_M_alpha*(mu-calc_sigma(Y_prime[i-1])**2/2)+sqrt_h_M*calc_sigma(Y_prime[i-1])*np.random.normal()
+        sig = calc_sigma(Y_prime[i-1])
+        X_prime[i] = X_prime[i-1] + h_M_alpha*(mu-sig**2/2)+sqrt_h_M*sig*np.random.normal()
 
     return (X_prime[M-1], Y_prime[M-1])
 
 def use_cdf(cdf, Y_primes, n):
-    # NOTE: potential for bug here if rand_num=0 and p(Y'_0) = 0, Y'_0 will still get choosen, 
-    #  there's also no guarantee currently that cdf[n] = 1.0
     rand_num = np.random.uniform()
     res = 0
-    for i in range(0,n):
+    start = 0
+    if(cdf[0] == 0):
+        start = 1
+    for i in range(1,n):
         if rand_num <= cdf[i]:
             res = i
             break
