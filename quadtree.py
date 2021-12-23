@@ -124,7 +124,7 @@ def main():
     #X_vals = np.array([1.3,2.3,3.3,4.8,1.2,3.4,1.1]) #used for testing
     N = 10
     print("Calculating Y bar values...")
-    Y_bar = calc_Y_bar(X_vals, N)
+    Y_bar = np.ones(10)#calc_Y_bar(X_vals, N)
     print(Y_bar)
     T = 10
     x0 = X_vals[-1]
