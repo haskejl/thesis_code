@@ -2,9 +2,12 @@ import numpy as np
 
 #phi as defined on page 10
 def calc_phi(x):
+    # Rewritten to allow for vectorized operation
+    return ((1-abs(x))*(x > -1)*(x < 1))
+    '''
     if x > -1 and x < 1:
         return 1-abs(x)
-    return 0
+    return 0'''
 
 #psi as defined on page 23
 def calc_psi(y):
@@ -33,14 +36,17 @@ def mutation_step(X, Y):
     Y_prime[0] = Y
     
     #Formula 3.2
+    h_M_alpha = h/M*alpha
+    sqrt_h_M = np.sqrt(h/M)
     for i in range(1,M):
-        Y_prime[i] = Y_prime[i-1] + h/M*alpha*(nu-Y_prime[i-1])+np.sqrt(h/M)*calc_psi(Y_prime[i-1])*np.random.normal()
-        X_prime[i] = X_prime[i-1] + h/M*alpha*(mu-calc_sigma(Y_prime[i-1])**2/2)+np.sqrt(h/M)*calc_sigma(Y_prime[i-1])*np.random.normal()
+        Y_prime[i] = Y_prime[i-1] + h_M_alpha*(nu-Y_prime[i-1])+sqrt_h_M*calc_psi(Y_prime[i-1])*np.random.normal()
+        X_prime[i] = X_prime[i-1] + h_M_alpha*(mu-calc_sigma(Y_prime[i-1])**2/2)+sqrt_h_M*calc_sigma(Y_prime[i-1])*np.random.normal()
 
     return (X_prime[M-1], Y_prime[M-1])
 
 def use_cdf(cdf, Y_primes, n):
-    # NOTE: potential for bug here if rand_num=0 and p(Y'_0) = 0, Y'_0 will still get choosen, there's also no guarantee currently that cdf[n] = 1.0
+    # NOTE: potential for bug here if rand_num=0 and p(Y'_0) = 0, Y'_0 will still get choosen, 
+    #  there's also no guarantee currently that cdf[n] = 1.0
     rand_num = np.random.uniform()
     res = 0
     for i in range(0,n):
@@ -53,9 +59,9 @@ def use_cdf(cdf, Y_primes, n):
 #it then generates a cdf for the discrete distribution and uses a uniformly distributed random number from the numpy library to select a value of Y' from this distribution
 #and returns C and a value of Y' to start the next mutation step
 def selection_step(X_primes, Y_primes, x, n):
-    C = 0
-    for i in range(0,n):
-        C += calc_phi(X_primes[i]-x)
+    C = sum(calc_phi(X_primes-x))
+    #for i in range(0,n):
+    #    C += calc_phi(X_primes[i]-x)
     cdf = np.zeros(n)
     cdf[0] = calc_phi(X_primes[0]-x)/C
     for i in range(1,n):
@@ -94,7 +100,7 @@ def calc_Y_bar(X, N):
         sel_res = selection_step(X_prime_out, Y_prime_out, X[i], n)
         Y_t_i = sel_res[0]
         cdf_out = sel_res[1]
-    
+    print(cdf_out)
     Y_bar = np.zeros(N)
     for i in range(0,N):
         Y_bar[i] = use_cdf(cdf_out, Y_prime_out, n)
@@ -116,6 +122,9 @@ def main():
     N = 10
     Y_bar = calc_Y_bar(X_vals, N)
     print(Y_bar)
+    T = 10
+    x0 = X_vals[-1]
+    print(x0)
     return 0
 
 if __name__ == "__main__":
