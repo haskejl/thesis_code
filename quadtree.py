@@ -100,6 +100,7 @@ def calc_Y_bar(X, N):
         sel_res = selection_step(X_prime_out, Y_prime_out, X[i], n)
         Y_t_i = sel_res[0]
         cdf_out = sel_res[1]
+    print("The CDF is...")
     print(cdf_out)
     Y_bar = np.zeros(N)
     for i in range(0,N):
@@ -114,17 +115,20 @@ def main():
     lines = data.readlines()
     data.close()
 
-    X_vals = np.zeros(len(lines))
+    X_vals = np.zeros(len(lines)-1)
     for i in range(0,len(lines)-1):
         X_vals[i] = float(lines[i+1].split(",")[4].strip())
 
     #X_vals = np.array([1.3,2.3,3.3,4.8,1.2,3.4,1.1]) #used for testing
     N = 10
+    print("Calculating Y bar values...")
     Y_bar = calc_Y_bar(X_vals, N)
     print(Y_bar)
     T = 10
     x0 = X_vals[-1]
+    print("x0 is...")
     print(x0)
+    print("Calculating the tree...")
     return 0
 
 if __name__ == "__main__":
