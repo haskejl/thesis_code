@@ -2,19 +2,21 @@ import numpy as np
 
 class QuadTreeNode:
 
-    def __init__(self, x, upp, up, down, downn, cond_prob):
+    def __init__(self, x, child_probs=np.array([None, None, None, None]), 
+    upp=None, up=None, down=None, downn=None, under_me=None):
         self.x = x
         self.upp = upp
         self.up = up
         self.down = down
         self.downn = downn
-        self.cond_probability = cond_prob
+        self.under_me = under_me #allows a singularly linked list for navigating through a time moment
+        self.child_probs = child_probs
 
     def calc_ev(self):
         if(self.upp == None):
-            return(self.x*self.cond_probability)
+            return self.x
         else:
-            return (self.upp.calc_ev()+self.up.calc_ev()+self.down.calc_ev()+self.downn.calc_ev())*self.cond_probability
+            return self.upp.calc_ev()*self.child_probs[0]+self.up.calc_ev()*self.child_probs[1]+self.down.calc_ev()*self.child_probs[2]+self.downn.calc_ev()*self.child_probs[3]
 
 #phi as defined on page 10
 def calc_phi(x):
@@ -152,12 +154,24 @@ def main():
     r = 0.0343
     dt = T/N
     sig = calc_sigma(Y_bar[0])
-    j = (x0 - (r-sig**2/2)*np.sqrt(dt))/sig
-    baseNode = QuadTreeNode(0, None, None, None, None, 1)
-    baseNode.upp = QuadTreeNode(1,None,None,None,None,0.25)
-    baseNode.up = QuadTreeNode(1, None, None, None, None, 0.25)
-    baseNode.down = QuadTreeNode(-1, None, None, None, None, 0.25)
-    baseNode.downn = QuadTreeNode(-2, None, None, None, None, 0.25)
+    add_pt = r-sig**2/2*dt
+    mul_pt = sig*np.sqrt(dt)
+    j = (x0 - add_pt)/mul_pt
+    baseNode = QuadTreeNode(x0, np.array([0.25, 0.25, 0.25, 0.25]))
+    topNode = baseNode.upp = QuadTreeNode((j+1)*mul_pt+add_pt)
+    baseNode.up = QuadTreeNode(j*mul_pt+add_pt)
+    baseNode.down = QuadTreeNode((j-1)*mul_pt+add_pt)
+    bottomNode = baseNode.downn = QuadTreeNode((j-2)*mul_pt+add_pt)
+
+    for i in range(1,N):
+        sig = calc_sigma(Y_bar[i])
+        add_pt = r-sig**2/2*dt
+        mul_pt = sig*np.sqrt(dt)
+        # Must be a ceiling function or j may end up below the point
+        j_upp = int(np.ceil((topNode.x - add_pt)/mul_pt))
+        j_downn = int(np.ceil((bottomNode.x - add_pt)/mul_pt))
+        j = range(j_downn-2, j_upp+1)
+        print(j)
 
     print(baseNode.calc_ev())
 
