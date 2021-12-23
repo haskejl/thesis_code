@@ -1,5 +1,21 @@
 import numpy as np
 
+class QuadTreeNode:
+
+    def __init__(self, x, upp, up, down, downn, cond_prob):
+        self.x = x
+        self.upp = upp
+        self.up = up
+        self.down = down
+        self.downn = downn
+        self.cond_probability = cond_prob
+
+    def calc_ev(self):
+        if(self.upp == None):
+            return(self.x*self.cond_probability)
+        else:
+            return (self.upp.calc_ev()+self.up.calc_ev()+self.down.calc_ev()+self.downn.calc_ev())*self.cond_probability
+
 #phi as defined on page 10
 def calc_phi(x):
     # Rewritten to allow for vectorized operation
@@ -127,10 +143,24 @@ def main():
     Y_bar = np.ones(10)#calc_Y_bar(X_vals, N)
     print(Y_bar)
     T = 10
-    x0 = X_vals[-1]
-    print("x0 is...")
+    x0 = np.log(X_vals[-1])
+    print("x0=log(S) is...")
     print(x0)
     print("Calculating the tree...")
+    # Find the initial J
+    # r value is from p. 25
+    r = 0.0343
+    dt = T/N
+    sig = calc_sigma(Y_bar[0])
+    j = (x0 - (r-sig**2/2)*np.sqrt(dt))/sig
+    baseNode = QuadTreeNode(0, None, None, None, None, 1)
+    baseNode.upp = QuadTreeNode(1,None,None,None,None,0.25)
+    baseNode.up = QuadTreeNode(1, None, None, None, None, 0.25)
+    baseNode.down = QuadTreeNode(-1, None, None, None, None, 0.25)
+    baseNode.downn = QuadTreeNode(-2, None, None, None, None, 0.25)
+
+    print(baseNode.calc_ev())
+
     return 0
 
 if __name__ == "__main__":
