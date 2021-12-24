@@ -1,7 +1,7 @@
 import numpy as np
 
 class QuadTreeNode:
-
+    # Class is similar to a skip list
     def __init__(self, x, child_probs=np.array([None, None, None, None]), 
     upp=None, up=None, down=None, downn=None, under_me=None):
         self.x = x
@@ -17,15 +17,10 @@ class QuadTreeNode:
             return self.x
         else:
             return self.upp.calc_ev()*self.child_probs[0]+self.up.calc_ev()*self.child_probs[1]+self.down.calc_ev()*self.child_probs[2]+self.downn.calc_ev()*self.child_probs[3]
-    
-    def set_intern_under(self):
-        self.upp.under_me = self.up
-        self.up.under_me = self.down
-        self.down.under_me = self.downn
 
     def print_mini_tree(self):
         print("Me: ", self.x)
-        print(self.upp.x, " ", self.up.x, " ", self.down.x, " ", self.downn.x, " ")
+        print(self.upp.x, " ", self.up.x, " ", self.down.x, " ", self.downn.x)
 
     def print_me(self):
         print("Me: ", self.x)
@@ -155,6 +150,8 @@ def main():
     N = 10
     print("Calculating Y bar values...")
     Y_bar = np.ones(10)#calc_Y_bar(X_vals, N)
+    for i in range(0,len(Y_bar)):
+        Y_bar[i] = np.random.normal()
     print(Y_bar)
     T = 10
     x0 = np.log(X_vals[-1])
@@ -165,16 +162,8 @@ def main():
     # r value is from p. 25
     r = 0.0343
     dt = T/N
-    sig = calc_sigma(Y_bar[0])
-    add_pt = r-sig**2/2*dt
-    mul_pt = sig*np.sqrt(dt)
-    j = (x0 - add_pt)/mul_pt
-    base_node = QuadTreeNode(x0, np.array([0.25, 0.25, 0.25, 0.25]))
-    top_node = base_node.upp = QuadTreeNode((j+1)*mul_pt+add_pt)
-    base_node.up = QuadTreeNode(j*mul_pt+add_pt)
-    base_node.down = QuadTreeNode((j-1)*mul_pt+add_pt)
-    bottom_node = base_node.downn = QuadTreeNode((j-2)*mul_pt+add_pt)
-    base_node.set_intern_under()
+    # Set the base node for the tree
+    top_node = bottom_node = base_node = QuadTreeNode(x0)
 
     for i in range(0,N):
         print("Running step: ", i)
@@ -188,23 +177,33 @@ def main():
         nodes = {j[0]: QuadTreeNode(j*mul_pt+add_pt)}
         for i in j:
             nodes = nodes | {i: QuadTreeNode(i*mul_pt+add_pt)}
-
+        # Since the nodes are shared, set up the linked list here
         for i in j[0:(len(j)-1)]:
             nodes[i].under_me = nodes[i-1]
 
         curr_node = top_node
         last_downn = None
         while(curr_node != None):
-            node_j_u = int(np.ceil((curr_node.x-add_pt)/mul_pt))+1
-            curr_node.upp = nodes[node_j_u]
-            curr_node.up = nodes[node_j_u-1]
-            curr_node.down = nodes[node_j_u-2]
-            curr_node.downn = nodes[node_j_u-3]
+            node_j = int(np.ceil((curr_node.x-add_pt)/mul_pt))
+            curr_node.upp = nodes[node_j+1]
+            curr_node.up = nodes[node_j]
+            curr_node.down = nodes[node_j-1]
+            curr_node.downn = nodes[node_j-2]
             curr_node.child_probs = [0.25, 0.25, 0.25, 0.25]
             curr_node = curr_node.under_me
         top_node = top_node.upp
         bottom_node = bottom_node.downn
     print(np.exp(base_node.calc_ev()))
+    '''print()
+    node = base_node
+    while(node != None):
+        string = format(node.x, ".2f")
+        list_node = node.under_me
+        while(list_node != None):
+            string = format(list_node.x, ".2f") + " " + string
+            list_node = list_node.under_me
+        node = node.upp
+        print(string)'''
 
     return 0
 
