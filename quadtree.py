@@ -2,7 +2,7 @@ import numpy as np
 
 class QuadTreeNode:
     # Class is similar to a skip list
-    def __init__(self, x, child_probs=np.array([None, None, None, None]), 
+    def __init__(self, x, probability=0, 
     upp=None, up=None, down=None, downn=None, under_me=None):
         self.x = x
         self.upp = upp
@@ -10,13 +10,7 @@ class QuadTreeNode:
         self.down = down
         self.downn = downn
         self.under_me = under_me #allows a singularly linked list for navigating through a time moment
-        self.child_probs = child_probs
-
-    def calc_ev(self):
-        if(self.upp == None):
-            return self.x
-        else:
-            return self.upp.calc_ev()*self.child_probs[0]+self.up.calc_ev()*self.child_probs[1]+self.down.calc_ev()*self.child_probs[2]+self.downn.calc_ev()*self.child_probs[3]
+        self.probability = probability
 
     def print_mini_tree(self):
         print("Me: ", self.x)
@@ -134,7 +128,8 @@ def calc_Y_bar(X, N):
         Y_bar[i] = use_cdf(cdf_out, Y_prime_out, n)
     return Y_bar
 
-    
+def payoff_func(x):
+    return max(x-70,0)
 
 def main():
     #Previous year's IBM close dates (Jul 19, 2004 to July 18, 2005)
@@ -144,67 +139,89 @@ def main():
 
     X_vals = np.zeros(len(lines)-1)
     for i in range(0,len(lines)-1):
+        # TODO: Does this have to be log? Otherwise I think the Y values should be for S not x=log(s)
+        #       I was getting unreasonable stock prices i.e. e^9
         X_vals[i] = float(lines[i+1].split(",")[4].strip())
+    nruns = 100
+    res = np.zeros(nruns)
+    for o in range(0,nruns):
+        print("Run #", o)
+        #X_vals = np.array([1.3,2.3,3.3,4.8,1.2,3.4,1.1]) #used for testing
+        N = 100
+        print("Calculating Y bar values...")
+        Y_bar = calc_Y_bar(X_vals, N)
+        '''for i in range(0,len(Y_bar)):
+            Y_bar[i] = np.random.normal()''' #used for testing
+        print(Y_bar)
+        T = 1
+        x0 = np.log(X_vals[-1])
+        print("x0=log(S) is...")
+        print(x0)
+        print("Calculating the tree...")
+        # Find the initial J
+        # r value is from p. 25
+        r = 0.0343
+        dt = T/N
+        # Set the base node for the tree
+        top_node = bottom_node = base_node = QuadTreeNode(x0, 1)
 
-    #X_vals = np.array([1.3,2.3,3.3,4.8,1.2,3.4,1.1]) #used for testing
-    N = 10
-    print("Calculating Y bar values...")
-    Y_bar = np.ones(10)#calc_Y_bar(X_vals, N)
-    for i in range(0,len(Y_bar)):
-        Y_bar[i] = np.random.normal()
-    print(Y_bar)
-    T = 10
-    x0 = np.log(X_vals[-1])
-    print("x0=log(S) is...")
-    print(x0)
-    print("Calculating the tree...")
-    # Find the initial J
-    # r value is from p. 25
-    r = 0.0343
-    dt = T/N
-    # Set the base node for the tree
-    top_node = bottom_node = base_node = QuadTreeNode(x0)
+        for i in range(0,N):
+            #print("Running step: ", i)
+            sig = calc_sigma(Y_bar[i])
+            add_pt = r-sig**2/2*dt
+            mul_pt = sig*np.sqrt(dt)
+            # Must be a ceiling function or j may end up below the point
+            j_upp = int(np.ceil((top_node.x - add_pt)/mul_pt))
+            j_downn = int(np.ceil((bottom_node.x - add_pt)/mul_pt))
+            j = range(j_upp+1, j_downn-3,-1)
+            nodes = {j[0]: QuadTreeNode(j*mul_pt+add_pt)}
+            for i in j:
+                nodes = nodes | {i: QuadTreeNode(i*mul_pt+add_pt)}
+            # Since the nodes are shared, set up the linked list here
+            for i in j[0:(len(j)-1)]:
+                nodes[i].under_me = nodes[i-1]
 
-    for i in range(0,N):
-        print("Running step: ", i)
-        sig = calc_sigma(Y_bar[i])
-        add_pt = r-sig**2/2*dt
-        mul_pt = sig*np.sqrt(dt)
-        # Must be a ceiling function or j may end up below the point
-        j_upp = int(np.ceil((top_node.x - add_pt)/mul_pt))
-        j_downn = int(np.ceil((bottom_node.x - add_pt)/mul_pt))
-        j = range(j_upp+1, j_downn-3,-1)
-        nodes = {j[0]: QuadTreeNode(j*mul_pt+add_pt)}
-        for i in j:
-            nodes = nodes | {i: QuadTreeNode(i*mul_pt+add_pt)}
-        # Since the nodes are shared, set up the linked list here
-        for i in j[0:(len(j)-1)]:
-            nodes[i].under_me = nodes[i-1]
-
+            curr_node = top_node
+            last_downn = None
+            while(curr_node != None):
+                node_j = int(np.ceil((curr_node.x-add_pt)/mul_pt))
+                curr_node.upp = nodes[node_j+1]
+                curr_node.upp.probability = curr_node.upp.probability + 0.25*curr_node.probability
+                curr_node.up = nodes[node_j]
+                curr_node.up.probability = curr_node.up.probability + 0.25*curr_node.probability
+                curr_node.down = nodes[node_j-1]
+                curr_node.down.probability = curr_node.down.probability + 0.25*curr_node.probability
+                curr_node.downn = nodes[node_j-2]
+                curr_node.downn.probability = curr_node.downn.probability + 0.25*curr_node.probability
+                
+                curr_node = curr_node.under_me
+            top_node = top_node.upp
+            bottom_node = bottom_node.downn
+        
+        # Calculate the ev of the payoff of the final row of options
+        print("Calculating EV...")
         curr_node = top_node
-        last_downn = None
         while(curr_node != None):
-            node_j = int(np.ceil((curr_node.x-add_pt)/mul_pt))
-            curr_node.upp = nodes[node_j+1]
-            curr_node.up = nodes[node_j]
-            curr_node.down = nodes[node_j-1]
-            curr_node.downn = nodes[node_j-2]
-            curr_node.child_probs = [0.25, 0.25, 0.25, 0.25]
+            #print("x = ", curr_node.x)
+            #print("p = ", curr_node.probability)
+            res[o] = res[o] + payoff_func(np.exp(curr_node.x))*curr_node.probability
+            #print("res = ", res[o])
             curr_node = curr_node.under_me
-        top_node = top_node.upp
-        bottom_node = bottom_node.downn
-    print(np.exp(base_node.calc_ev()))
-    '''print()
-    node = base_node
-    while(node != None):
-        string = format(node.x, ".2f")
-        list_node = node.under_me
-        while(list_node != None):
-            string = format(list_node.x, ".2f") + " " + string
-            list_node = list_node.under_me
-        node = node.upp
-        print(string)'''
-
+        
+        print("EV = ", res[o])
+        '''print()
+        node = base_node
+        while(node != None):
+            string = format(node.x, ".2f")
+            list_node = node.under_me
+            while(list_node != None):
+                string = format(list_node.x, ".2f") + " " + string
+                list_node = list_node.under_me
+            node = node.upp
+            print(string)'''
+    
+    print()
+    print(np.mean(res))
     return 0
 
 if __name__ == "__main__":
