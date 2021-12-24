@@ -17,6 +17,18 @@ class QuadTreeNode:
             return self.x
         else:
             return self.upp.calc_ev()*self.child_probs[0]+self.up.calc_ev()*self.child_probs[1]+self.down.calc_ev()*self.child_probs[2]+self.downn.calc_ev()*self.child_probs[3]
+    
+    def set_intern_under(self):
+        self.upp.under_me = self.up
+        self.up.under_me = self.down
+        self.down.under_me = self.downn
+
+    def print_mini_tree(self):
+        print("Me: ", self.x)
+        print(self.upp.x, " ", self.up.x, " ", self.down.x, " ", self.downn.x, " ")
+
+    def print_me(self):
+        print("Me: ", self.x)
 
 #phi as defined on page 10
 def calc_phi(x):
@@ -157,23 +169,42 @@ def main():
     add_pt = r-sig**2/2*dt
     mul_pt = sig*np.sqrt(dt)
     j = (x0 - add_pt)/mul_pt
-    baseNode = QuadTreeNode(x0, np.array([0.25, 0.25, 0.25, 0.25]))
-    topNode = baseNode.upp = QuadTreeNode((j+1)*mul_pt+add_pt)
-    baseNode.up = QuadTreeNode(j*mul_pt+add_pt)
-    baseNode.down = QuadTreeNode((j-1)*mul_pt+add_pt)
-    bottomNode = baseNode.downn = QuadTreeNode((j-2)*mul_pt+add_pt)
+    base_node = QuadTreeNode(x0, np.array([0.25, 0.25, 0.25, 0.25]))
+    top_node = base_node.upp = QuadTreeNode((j+1)*mul_pt+add_pt)
+    base_node.up = QuadTreeNode(j*mul_pt+add_pt)
+    base_node.down = QuadTreeNode((j-1)*mul_pt+add_pt)
+    bottom_node = base_node.downn = QuadTreeNode((j-2)*mul_pt+add_pt)
+    base_node.set_intern_under()
 
-    for i in range(1,N):
+    for i in range(0,N):
+        print("Running step: ", i)
         sig = calc_sigma(Y_bar[i])
         add_pt = r-sig**2/2*dt
         mul_pt = sig*np.sqrt(dt)
         # Must be a ceiling function or j may end up below the point
-        j_upp = int(np.ceil((topNode.x - add_pt)/mul_pt))
-        j_downn = int(np.ceil((bottomNode.x - add_pt)/mul_pt))
-        j = range(j_downn-2, j_upp+1)
-        print(j)
+        j_upp = int(np.ceil((top_node.x - add_pt)/mul_pt))
+        j_downn = int(np.ceil((bottom_node.x - add_pt)/mul_pt))
+        j = range(j_upp+1, j_downn-3,-1)
+        nodes = {j[0]: QuadTreeNode(j*mul_pt+add_pt)}
+        for i in j:
+            nodes = nodes | {i: QuadTreeNode(i*mul_pt+add_pt)}
 
-    print(baseNode.calc_ev())
+        for i in j[0:(len(j)-1)]:
+            nodes[i].under_me = nodes[i-1]
+
+        curr_node = top_node
+        last_downn = None
+        while(curr_node != None):
+            node_j_u = int(np.ceil((curr_node.x-add_pt)/mul_pt))+1
+            curr_node.upp = nodes[node_j_u]
+            curr_node.up = nodes[node_j_u-1]
+            curr_node.down = nodes[node_j_u-2]
+            curr_node.downn = nodes[node_j_u-3]
+            curr_node.child_probs = [0.25, 0.25, 0.25, 0.25]
+            curr_node = curr_node.under_me
+        top_node = top_node.upp
+        bottom_node = bottom_node.downn
+    print(np.exp(base_node.calc_ev()))
 
     return 0
 
