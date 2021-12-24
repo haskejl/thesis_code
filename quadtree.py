@@ -42,8 +42,8 @@ def calc_sigma(y):
 #and returns an (X',Y') pair corresponding to t_{i+1}
 def mutation_step(X, Y):
     h = 1 #day
-    #M selected based on page 10
-    M = 1000
+    #M selected based on page 23
+    M = 300
     #alpha, mu, and nu are defined on page 25 from the IBM specific data
     alpha = 11.85566
     mu = 0.04588
@@ -64,13 +64,13 @@ def mutation_step(X, Y):
 
     return (X_prime[M-1], Y_prime[M-1])
 
-def use_cdf(cdf, Y_primes, n):
+def use_cdf(cdf, Y_primes):
     rand_num = np.random.uniform()
     res = 0
     start = 0
     if(cdf[0] == 0):
         start = 1
-    for i in range(1,n):
+    for i in range(1,len(cdf)):
         if rand_num <= cdf[i]:
             res = i
             break
@@ -87,11 +87,11 @@ def selection_step(X_primes, Y_primes, x, n):
     cdf[0] = calc_phi(X_primes[0]-x)/C
     for i in range(1,n):
         cdf[i] = cdf[i-1] + calc_phi(X_primes[i]-x)/C
-    return (use_cdf(cdf, Y_primes, n), cdf)
+    return (use_cdf(cdf, Y_primes), cdf)
 
-def calc_Y_bar(X, N):
-    #n is selected from the recommendation on page 10
-    n = 10
+def calc_cdf(X, N):
+    #n is selected from p.23 (1000)
+    n = 100
     #K is the length of the historical data (in days for daily data)
     K = len(X)
     cdf_out = np.zeros(N)
@@ -122,10 +122,18 @@ def calc_Y_bar(X, N):
         Y_t_i = sel_res[0]
         cdf_out = sel_res[1]
     print("The CDF is...")
+    print(Y_prime_out)
     print(cdf_out)
+    return(cdf_out, Y_prime_out)
+    #Y_bar = np.zeros(N)
+    #for i in range(0,N):
+    #    Y_bar[i] = use_cdf(cdf_out, Y_prime_out, n)
+    #return Y_bar
+
+def gen_Y_bars(cdf, Y_prime, N):
     Y_bar = np.zeros(N)
     for i in range(0,N):
-        Y_bar[i] = use_cdf(cdf_out, Y_prime_out, n)
+        Y_bar[i] = use_cdf(cdf, Y_prime)
     return Y_bar
 
 def payoff_func(x):
@@ -139,22 +147,25 @@ def main():
 
     X_vals = np.zeros(len(lines)-1)
     for i in range(0,len(lines)-1):
-        # TODO: Does this have to be log? Otherwise I think the Y values should be for S not x=log(s)
-        #       I was getting unreasonable stock prices i.e. e^9
+        # TODO: Does this have to be log?
         X_vals[i] = float(lines[i+1].split(",")[4].strip())
     nruns = 100
     res = np.zeros(nruns)
+    N = 100
+    print("Calculating cdf...")
+    cdf_Ybar = calc_cdf(X_vals, N)
+
     for o in range(0,nruns):
         print("Run #", o)
         #X_vals = np.array([1.3,2.3,3.3,4.8,1.2,3.4,1.1]) #used for testing
-        N = 100
         print("Calculating Y bar values...")
-        Y_bar = calc_Y_bar(X_vals, N)
-        '''for i in range(0,len(Y_bar)):
-            Y_bar[i] = np.random.normal()''' #used for testing
-        print(Y_bar)
+        Y_bar = gen_Y_bars(cdf_Ybar[0], cdf_Ybar[1], N)
+        #for i in range(0,len(Y_bar)):
+        #    Y_bar[i] = np.random.normal() #used for testing
+        #print(Y_bar)
         T = 1
         x0 = np.log(X_vals[-1])
+        p=1/8
         print("x0=log(S) is...")
         print(x0)
         print("Calculating the tree...")
@@ -168,31 +179,63 @@ def main():
         for i in range(0,N):
             #print("Running step: ", i)
             sig = calc_sigma(Y_bar[i])
-            add_pt = r-sig**2/2*dt
+            #add_pt = r-sig**2/2*dt
             mul_pt = sig*np.sqrt(dt)
             # Must be a ceiling function or j may end up below the point
-            j_upp = int(np.ceil((top_node.x - add_pt)/mul_pt))
-            j_downn = int(np.ceil((bottom_node.x - add_pt)/mul_pt))
+            '''j_upp = int(np.ceil((top_node.x - add_pt)/mul_pt))
+            j_downn = int(np.ceil((bottom_node.x - add_pt)/mul_pt))'''
+            j_upp = int(np.ceil(top_node.x/mul_pt))
+            j_downn = int(np.ceil(bottom_node.x/mul_pt))
             j = range(j_upp+1, j_downn-3,-1)
-            nodes = {j[0]: QuadTreeNode(j*mul_pt+add_pt)}
-            for i in j:
-                nodes = nodes | {i: QuadTreeNode(i*mul_pt+add_pt)}
+            nodes = {j[0]: QuadTreeNode(j*mul_pt)}#+add_pt)}
+            for k in j:
+                nodes = nodes | {k: QuadTreeNode(k*mul_pt)}#+add_pt)}
             # Since the nodes are shared, set up the linked list here
-            for i in j[0:(len(j)-1)]:
-                nodes[i].under_me = nodes[i-1]
+            for k in j[0:(len(j)-1)]:
+                nodes[k].under_me = nodes[k-1]
+            
 
             curr_node = top_node
             last_downn = None
             while(curr_node != None):
-                node_j = int(np.ceil((curr_node.x-add_pt)/mul_pt))
+                # TODO: What about the drift term? It is used in some places in the paper
+                #     but not in others
+                #node_j = int(np.ceil((curr_node.x-add_pt)/mul_pt))
+                node_j = int(np.ceil(curr_node.x/mul_pt))
+                '''if(i == -1):
+                    x_wo_drift = curr_node.x-calc_sigma(Y_bar[i-1])*np.sqrt(dt)
+                else:
+                    x_wo_drift = curr_node.x'''
+                if(nodes[node_j].x-curr_node.x < curr_node.x-nodes[node_j-1].x):
+                    q = (curr_node.x-nodes[node_j].x)/mul_pt
+                    p4 = p
+                    p1 = 0.5*(1+q+q**2)-p
+                    p2 = 3*p-q**2
+                    p3 = 0.5*(1-q+q**2)-3*p
+                    if((p1 < 0 or p1 > 1) or (p2 < 0 or p2 > 1) or (p3 < 0 or p3 > 1) or (p4 < 0 or p4 > 1)):
+                        print("1x = ", curr_node.x, " j = ", node_j, " sig*dt = ", mul_pt, " q = ", q)
+                        print(p1, " ", p2, " ", p3, " ", p4, "   ", p1+p2+p3+p4)
+                        print()
+                
+                else:
+                    q = (curr_node.x-nodes[node_j-1].x)/mul_pt
+                    p1 = p
+                    p2 = 0.5*(1+q+q**2)-3*p
+                    p3 = 3*p-q**2
+                    p4 = 0.5*(1-q+q**2)-p
+                    if((p1 < 0 or p1 > 1) or (p2 < 0 or p2 > 1) or (p3 < 0 or p3 > 1) or (p4 < 0 or p4 > 1)):
+                        print("2x = ", curr_node.x, " j = ", node_j, " sig*dt = ", mul_pt, " q = ", q)
+                        print(p1, " ", p2, " ", p3, " ", p4, "   ", p1+p2+p3+p4)
+                        print()
+
                 curr_node.upp = nodes[node_j+1]
-                curr_node.upp.probability = curr_node.upp.probability + 0.25*curr_node.probability
+                curr_node.upp.probability = curr_node.upp.probability + p1*curr_node.probability
                 curr_node.up = nodes[node_j]
-                curr_node.up.probability = curr_node.up.probability + 0.25*curr_node.probability
+                curr_node.up.probability = curr_node.up.probability + p2*curr_node.probability
                 curr_node.down = nodes[node_j-1]
-                curr_node.down.probability = curr_node.down.probability + 0.25*curr_node.probability
+                curr_node.down.probability = curr_node.down.probability + p3*curr_node.probability
                 curr_node.downn = nodes[node_j-2]
-                curr_node.downn.probability = curr_node.downn.probability + 0.25*curr_node.probability
+                curr_node.downn.probability = curr_node.downn.probability + p4*curr_node.probability
                 
                 curr_node = curr_node.under_me
             top_node = top_node.upp
@@ -209,6 +252,7 @@ def main():
             curr_node = curr_node.under_me
         
         print("EV = ", res[o])
+        print("Curr est EV = ", np.mean(res[0:(o+1)]))
         '''print()
         node = base_node
         while(node != None):
