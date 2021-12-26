@@ -141,28 +141,28 @@ def payoff_func(x):
 
 def calc_quad_tree_ev(x0, Y_bar, N):
     T = 1
-    p=1/8
+    p=0.135
     # r value is from p. 25
     r = 0.0343
     dt = T/N
     print("Calculating the tree...")
     # Set the base node for the tree
     top_node = bottom_node = base_node = QuadTreeNode(x0, 1)
+    sig = calc_sigma(Y_bar)
+    add_pt = (r-sig**2/2)*dt
+    mul_pt = sig*np.sqrt(dt)
 
     for i in range(0,N):
         #print("Running step: ", i)
-        sig = calc_sigma(Y_bar[i])
-        add_pt = r-sig**2/2*dt
-        mul_pt = sig*np.sqrt(dt)
         # Must be a ceiling function or j may end up below the point
-        j_upp = int(np.ceil((top_node.x - add_pt)/mul_pt))
-        j_downn = int(np.ceil((bottom_node.x - add_pt)/mul_pt))
+        j_upp = int(np.ceil((top_node.x - add_pt[i])/mul_pt[i]))
+        j_downn = int(np.ceil((bottom_node.x - add_pt[i])/mul_pt[i]))
         '''j_upp = int(np.ceil(top_node.x/mul_pt))
         j_downn = int(np.ceil(bottom_node.x/mul_pt))'''
         j = range(j_upp+1, j_downn-3,-1)
-        nodes = {j[0]: QuadTreeNode(j*mul_pt+add_pt)}
+        nodes = {j[0]: QuadTreeNode(j*mul_pt[i]+add_pt[i])}
         for k in j:
-            nodes = nodes | {k: QuadTreeNode(k*mul_pt+add_pt)}
+            nodes = nodes | {k: QuadTreeNode(k*mul_pt[i]+add_pt[i])}
         # Since the nodes are shared, set up the linked list here
         for k in j[0:(len(j)-1)]:
             nodes[k].under_me = nodes[k-1]
@@ -173,30 +173,62 @@ def calc_quad_tree_ev(x0, Y_bar, N):
         while(curr_node != None):
             # TODO: What about the drift term? It is used in some places in the paper
             #     but not in others
-            node_j = int(np.ceil((curr_node.x-add_pt)/mul_pt))
+            node_j = int(np.ceil((curr_node.x-add_pt[i])/mul_pt[i]))
             #node_j = int(np.ceil(curr_node.x/mul_pt))
+            d1 = 0
+            d2 = 0
+            if(i >= 0):
+                d1 = curr_node.x - nodes[node_j].x#node_j*mul_pt[i]+add_pt[i]
+                d2 = curr_node.x - nodes[node_j-1].x#(node_j-1)*mul_pt[i]+add_pt[i]
+                if d1 > 0 or d2 < 0:
+                    print("d1 = ", d1, " d2 = ", d2)
+                    print("x: = ", curr_node.x, " up = ", nodes[node_j], " down = ", nodes[node_j-1])
+                assert d1 <= 0, "d1 should be <= 0 at i==0"
+                assert d2 >= 0, "d2 should be >= 0 at i==0"
+            else:
+                d1 = curr_node.x-add_pt[i-1] - node_j*mul_pt[i]
+                d2 = curr_node.x-add_pt[i-1] - (node_j-1)*mul_pt[i]
+                if d1 > 0 or d2 < 0: print("d1 = ", d1, " d2 = ", d2)
+                assert d1 <= 0, "d1 should be <= 0 at i>0"
+                assert d2 >= 0, "d2 should be >= 0 at i>0"
             
-            if(nodes[node_j].x - curr_node.x < curr_node.x - nodes[node_j-1].x):
-                q = (curr_node.x - nodes[node_j].x)/mul_pt
+            #if(nodes[node_j].x - curr_node.x < curr_node.x - nodes[node_j-1].x):
+            p1 = 0
+            p2 = 0
+            p3 = 0
+            p4 = 0
+            if(-d1 < d2):
+                q = d1/mul_pt[i]
                 p4 = p
                 p1 = 0.5*(1+q+q**2)-p
                 p2 = 3*p-q**2
                 p3 = 0.5*(1-q+q**2)-3*p
-                if((p1 < 0 or p1 > 1) or (p2 < 0 or p2 > 1) or (p3 < 0 or p3 > 1) or (p4 < 0 or p4 > 1)):
+                if((p1 < 0 or p1 > 1) or (p2 < 0 or p2 > 1) or (p3 < 0 or p3 > 1)):
                     print("1x = ", curr_node.x, " j = ", node_j, " sig*dt = ", mul_pt, " q = ", q)
                     print(p1, " ", p2, " ", p3, " ", p4, "   ", p1+p2+p3+p4)
                     print()
-            
+                    assert p1 > 0, "p1 should be > 0 for -d1 < d2"
+                    assert p2 > 0, "p2 should be > 0 for -d1 < d2"
+                    assert p3 > 0, "p3 should be > 0 for -d1 < d2"
+                    assert p1 < 1, "p1 should be < 1 for -d1 < d2"
+                    assert p2 < 1, "p2 should be < 1 for -d1 < d2"
+                    assert p3 < 1, "p3 should be < 1 for -d1 < d2"
             else:
-                q = (curr_node.x - nodes[node_j-1].x)/mul_pt
+                q = d2/mul_pt[i]
                 p1 = p
                 p2 = 0.5*(1+q+q**2)-3*p
                 p3 = 3*p-q**2
                 p4 = 0.5*(1-q+q**2)-p
-                if((p1 < 0 or p1 > 1) or (p2 < 0 or p2 > 1) or (p3 < 0 or p3 > 1) or (p4 < 0 or p4 > 1)):
+                if((p2 < 0 or p2 > 1) or (p3 < 0 or p3 > 1) or (p4 < 0 or p4 > 1)):
                     print("2x = ", curr_node.x, " j = ", node_j, " sig*dt = ", mul_pt, " q = ", q)
                     print(p1, " ", p2, " ", p3, " ", p4, "   ", p1+p2+p3+p4)
                     print()
+                    assert p4 > 0, "p4 should be > 0 for -d1 > d2"
+                    assert p2 > 0, "p2 should be > 0 for -d1 > d2"
+                    assert p3 > 0, "p3 should be > 0 for -d1 > d2"
+                    assert p4 < 1, "p4 should be < 1 for -d1 > d2"
+                    assert p2 < 1, "p2 should be < 1 for -d1 > d2"
+                    assert p3 < 1, "p3 should be < 1 for -d1 > d2"
 
             curr_node.upp = nodes[node_j+1]
             curr_node.upp.probability = curr_node.upp.probability + p1*curr_node.probability
@@ -215,13 +247,16 @@ def calc_quad_tree_ev(x0, Y_bar, N):
     print("Calculating EV...")
     curr_node = top_node
     ret_val = 0
+    tot_prob = 0
     while(curr_node != None):
         #print("x = ", curr_node.x)
         #print("p = ", curr_node.probability)
+        tot_prob = tot_prob + curr_node.probability
         ret_val = ret_val + payoff_func(np.exp(curr_node.x))*curr_node.probability
         #print("res = ", res[o])
         curr_node = curr_node.under_me
-    print("EV = ", ret_val)
+    print("EV for run = ", ret_val)
+    print("Total Prob for run = ", tot_prob)
     '''print()
     node = base_node
     while(node != None):
@@ -236,32 +271,32 @@ def calc_quad_tree_ev(x0, Y_bar, N):
 
 def main():
     #Previous year's IBM close dates (Jul 19, 2004 to July 18, 2005)
-    data = open("./data/19072004_19072005_IBM.csv")
+    data = open("./data/10days_IBM.csv")
     lines = data.readlines()
     data.close()
 
     X_vals = np.zeros(len(lines)-1)
     for i in range(0,len(lines)-1):
         # TODO: Should this have the log taken since data is transformed later
-        X_vals[i] = float(lines[i+1].split(",")[4].strip())
+        X_vals[i] = np.log(float(lines[i+1].split(",")[4].strip()))
     nruns = 100
     N = 100
-    x0 = np.log(X_vals[-1]) #could also set to 80.99 the open price for July 19, 2005
+    x0 = X_vals[-1] #could also set to 80.99 the open price for July 19, 2005
     res = np.zeros(nruns)
     print("Calculating cdf...")
     cdf_Ybar = calc_cdf(X_vals)
 
     for o in range(0,nruns):
-        print("Run #", o)
-        print("Calculating Y bar values...")
+        #print("Run #", o)
+        #print("Calculating Y bar values...")
         Y_bar = gen_Y_bars(cdf_Ybar[0], cdf_Ybar[1], N)
         
         res[o] = calc_quad_tree_ev(x0, Y_bar, N)
 
-        print("Curr est EV = ", np.mean(res[0:(o+1)]))
+        #print("Curr est EV = ", np.mean(res[0:(o+1)]))
     
     print()
-    print(np.mean(res))
+    print("Overall EV = ", np.mean(res))
     return 0
 
 if __name__ == "__main__":
