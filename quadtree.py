@@ -132,8 +132,7 @@ def gen_Y_bars(cdf, Y_prime, N):
     return Y_bar
 
 def payoff_func(x, E, r, T):
-    # TODO: does the payoff need to be discounted?
-    return max(x-E,0)#*np.exp(-r*T)
+    return max(x-E,0)*np.exp(-r*T)
 
 def calc_quad_tree_ev(x0, Y_bar, N, E):
     # Time is 43 trading days from Jul. 19 to Sep. 16 since volatility was calculated based on days
@@ -160,7 +159,8 @@ def calc_quad_tree_ev(x0, Y_bar, N, E):
         # Calculate all of the successors with the drift term
         nodes = {j[0]: QuadTreeNode(j*mul_pt[i]+add_pt[i])}
         for k in j:
-            nodes = nodes | {k: QuadTreeNode(k*mul_pt[i]+add_pt[i])}
+            nodes.update({k: QuadTreeNode(k*mul_pt[i]+add_pt[i])})
+            #nodes = nodes | {k: QuadTreeNode(k*mul_pt[i]+add_pt[i])} # Requires Python 3.9+
         # Since the nodes are shared, set up the linked list here
         for k in j[0:(len(j)-1)]:
             nodes[k].under_me = nodes[k-1]
@@ -249,7 +249,7 @@ def main():
     #    X_vals[i] = float(lines[i+1].split(",")[4].strip())
     nruns = 100
     N = 100
-    X_vals = np.array([78.09,80.25]) #HL Jul 18, 2005
+    X_vals = np.log(np.array([78.09,80.25])) #HL Jul 18, 2005
     #X_vals = np.array([78.38,78.21]) #OC Jul 18, 2005
     x0 = np.log(80.99) # open price for Jul 19, 2005
     res = np.zeros(nruns)
