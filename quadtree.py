@@ -18,9 +18,9 @@ class QuadTreeNode:
         print(self.upp.x, " ", self.up.x, " ", self.down.x, " ", self.downn.x)
 
 Phi = stats.norm.cdf
-def bs_call(S, E, T, r, volat, D):
-    sigma = np.sqrt(volat)
-    d1 = (np.log(S/E)+(r-D+(volat/2))*T)/(sigma*np.sqrt(T))
+def bs_call(S, E, T, r, sigma_sq, D):
+    sigma = np.sqrt(sigma_sq)
+    d1 = (np.log(S/E)+(r-D+(sigma_sq/2))*T)/(sigma*np.sqrt(T))
     d2 = d1-sigma*np.sqrt(T)
     return(S*np.exp(-D*T)*Phi(d1)-E*np.exp(-r*T)*Phi(d2))
 
@@ -136,7 +136,7 @@ def payoff_func(x, E, r, T):
     return max(x-E,0)*np.exp(-r*T)
 
 def calc_quad_tree_ev(x0, Y_bar, N, E):
-    # Time is 43 trading days from Jul. 19 to Sep. 16 since volatility was calculated based on days
+    # Time is 43 trading days from Jul. 19 to Sep. 16 since sigma_sqility was calculated based on days
     # If we count Jul. 19th (assume valuation on open), The 1st Monday of Sept. isn't a trading day
     T = 43/252 
     p = 0.14
@@ -219,6 +219,16 @@ def calc_quad_tree_ev(x0, Y_bar, N, E):
 
             # Go to the next node in this period
             curr_node = curr_node.under_me
+        
+        curr_node = top_node
+        last_node = top_node
+        assert top_node.probability != 0, "Error: the top node probability is zero"
+        while(curr_node != None):
+            if(curr_node.probability == 0):
+                last_node.under_me = curr_node.under_me
+            else:
+                last_node = curr_node
+            curr_node = curr_node.under_me
         # Set the top and bottom nodes for the next period
         top_node = top_node.upp
         bottom_node = bottom_node.downn
@@ -252,8 +262,9 @@ def main():
     nruns = 100
     N = 100
     X_vals = np.log(np.array([78.09,80.25])) #HL Jul 18, 2005
-    #X_vals = np.array([78.38,78.21]) #OC Jul 18, 2005
-    x0 = np.log(80.99) # open price for Jul 19, 2005
+    #X_vals = np.array([78.38,78.21]) #OC Jul 18, 2005 
+    s0 = 80.99 # open price for Jul 19, 2005 O: 80.99, H:81.37, L: 80.02, C: 80.02
+    x0 = np.log(s0) 
     res = np.zeros(nruns)
     print("Calculating cdf...")
     cdf_Ybar = calc_cdf(X_vals)
@@ -274,7 +285,7 @@ def main():
         res[run] = calc_quad_tree_ev(x0, Y_bar, N, E=70)
         #print()
     
-    bs_price = bs_call(80.99, 70, 43/252, 0.0343, 0.234, 0)
+    bs_price = bs_call(s0, 70, 43/252, 0.0343, 0.234, 0)
     row = 1
     col = 4
     worksheet.write(0, 4, "Overall EV:")
