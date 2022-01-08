@@ -32,12 +32,18 @@ def mutation_step(X, Y):
     Y_prime[0] = Y
     
     #Formula 3.2
+    u = np.random.normal(size = M)
+    u_prime = np.random.normal(size = M)
+
     h_M_alpha = h/M*alpha
-    sqrt_h_M = np.sqrt(h/M)
+    # psi is currently constant
+    sqrt_h_M_psi_u = np.sqrt(h/M)*calc_psi(Y_prime[0])*u
+    sqrt_h_M_u_prime = np.sqrt(h/M)*u_prime
+    
     for i in range(1,M):
-        Y_prime[i] = Y_prime[i-1] + h_M_alpha*(nu-Y_prime[i-1])+sqrt_h_M*calc_psi(Y_prime[i-1])*np.random.normal()
+        Y_prime[i] = Y_prime[i-1] + h_M_alpha*(nu-Y_prime[i-1])+sqrt_h_M_psi_u[i-1]
         sig = calc_sigma(Y_prime[i-1])
-        X_prime[i] = X_prime[i-1] + h_M_alpha*(mu-sig**2/2)+sqrt_h_M*sig*np.random.normal()
+        X_prime[i] = X_prime[i-1] + h_M_alpha*(mu-sig**2/2)+sig*sqrt_h_M_u_prime[i-1]
 
     return (X_prime[M-1], Y_prime[M-1])
 
@@ -45,7 +51,7 @@ def use_cdf(cdf, Y_primes):
     rand_num = np.random.uniform()
     res = 0
     start = 0
-    
+
     for i in range(start,len(cdf)):
         if rand_num <= cdf[i]:
             res = i
@@ -57,14 +63,14 @@ def use_cdf(cdf, Y_primes):
 #and returns C and a value of Y' to start the next mutation step
 def selection_step(X_primes, Y_primes, x, n):
     phis = calc_phi(X_primes-x)
-    C = sum(phis)
+
     # Remove leading values with 0 probability
     while phis[0] == 0:
         phis = np.delete(phis, 0)
         Y_primes = np.delete(Y_primes, 0)
     n = len(Y_primes)
     cdf = np.zeros(n)
-    cdf[0] = phis[0]/C
+    cdf[0] = phis[0]
     i = 1
     while i < n:
         # Remove any values with 0 probability
@@ -73,8 +79,11 @@ def selection_step(X_primes, Y_primes, x, n):
             Y_primes = np.delete(Y_primes, i)
             n -= 1
         else:
-            cdf[i] = cdf[i-1] + phis[i]/C
+            cdf[i] = cdf[i-1] + phis[i]
             i += 1
+    # Holding out on the division by C until here allows the operation to be vectorized,
+    #  and to avoid unnecessary 0/C
+    cdf = cdf/sum(phis)
     # This gets rid of floating point error, maybe not the best way to do it,
     #  but it guarantees a probability of 1. Typically these probabilities are on the 
     #  order of 10^-5 to 10^-3 whereas the error is much smaller 10^-16
