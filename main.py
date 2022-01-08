@@ -1,6 +1,8 @@
 import xlsxwriter
 import numpy as np
 
+import bsfunc as bsf
+import estimdist as est
 import quadtree as qt
 
 def main():
@@ -22,7 +24,7 @@ def main():
     x0 = np.log(s0) 
     res = np.zeros(nruns)
     print("Calculating cdf...")
-    cdf_Ybar = qt.calc_cdf(X_vals)
+    cdf_Ybar = est.calc_cdf(X_vals)
     row = 1
     col = 0
     worksheet = workbook.add_worksheet("Results")
@@ -36,11 +38,11 @@ def main():
 
     for run in range(0,nruns):
         print("Run #", run+1, "/", nruns)
-        Y_bar = qt.gen_Y_bars(cdf_Ybar[0], cdf_Ybar[1], N)
+        Y_bar = est.gen_Y_bars(cdf_Ybar[0], cdf_Ybar[1], N)
         res[run] = qt.calc_quad_tree_ev(x0, Y_bar, N, E=70)
         #print()
     
-    bs_price = qt.bs_call(s0, 70, 43/252, 0.0343, 0.234, 0)
+    bs_price = bsf.bs_call(s0, 70, 43/252, 0.0343, 0.234, 0)
     row = 1
     col = 4
     worksheet.write(0, 4, "Overall EV:")
