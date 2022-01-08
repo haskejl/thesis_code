@@ -45,11 +45,7 @@ def use_cdf(cdf, Y_primes):
     rand_num = np.random.uniform()
     res = 0
     start = 0
-    # Due to the way the for loop works, a value with 0 probablility could be choosen if
-    # the rng gives 0 for the random number, so the values at the beginning of the cdf array
-    # with p=0 need to be "thrown out"
-    while(cdf[start] == 0):
-        start += 1
+    
     for i in range(start,len(cdf)):
         if rand_num <= cdf[i]:
             res = i
@@ -60,11 +56,29 @@ def use_cdf(cdf, Y_primes):
 #it then generates a cdf for the discrete distribution and uses a uniformly distributed random number from the numpy library to select a value of Y' from this distribution
 #and returns C and a value of Y' to start the next mutation step
 def selection_step(X_primes, Y_primes, x, n):
-    C = sum(calc_phi(X_primes-x))
+    phis = calc_phi(X_primes-x)
+    C = sum(phis)
+    # Remove leading values with 0 probability
+    while phis[0] == 0:
+        phis = np.delete(phis, 0)
+        Y_primes = np.delete(Y_primes, 0)
+    n = len(Y_primes)
     cdf = np.zeros(n)
-    cdf[0] = calc_phi(X_primes[0]-x)/C
-    for i in range(1,n):
-        cdf[i] = cdf[i-1] + calc_phi(X_primes[i]-x)/C
+    cdf[0] = phis[0]/C
+    i = 1
+    while i < n:
+        # Remove any values with 0 probability
+        if phis[i] == 0:
+            phis = np.delete(phis, i)
+            Y_primes = np.delete(Y_primes, i)
+            n -= 1
+        else:
+            cdf[i] = cdf[i-1] + phis[i]/C
+            i += 1
+    # This gets rid of floating point error, maybe not the best way to do it,
+    #  but it guarantees a probability of 1. Typically these probabilities are on the 
+    #  order of 10^-5 to 10^-3 whereas the error is much smaller 10^-16
+    cdf[n-1] = round(cdf[n-1], 0)
     return (use_cdf(cdf, Y_primes), cdf)
 
 def calc_cdf(X):
