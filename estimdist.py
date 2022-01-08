@@ -21,6 +21,8 @@ def mutation_step(X, Y):
     h = 1 #day
     #M selected based on page 23
     M = 300
+    dt = h/M
+    sqrt_h_M = np.sqrt(dt)
     #alpha, mu, and nu are defined on page 25 from the IBM specific data
     alpha = 11.85566
     mu = 0.04588
@@ -35,10 +37,10 @@ def mutation_step(X, Y):
     u = np.random.normal(size = M)
     u_prime = np.random.normal(size = M)
 
-    h_M_alpha = h/M*alpha
+    h_M_alpha = dt*alpha
     # psi is currently constant
-    sqrt_h_M_psi_u = np.sqrt(h/M)*calc_psi(Y_prime[0])*u
-    sqrt_h_M_u_prime = np.sqrt(h/M)*u_prime
+    sqrt_h_M_psi_u = sqrt_h_M*calc_psi(Y_prime[0])*u
+    sqrt_h_M_u_prime = sqrt_h_M*u_prime
     
     for i in range(1,M):
         Y_prime[i] = Y_prime[i-1] + h_M_alpha*(nu-Y_prime[i-1])+sqrt_h_M_psi_u[i-1]
