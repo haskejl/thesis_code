@@ -107,3 +107,19 @@ def gen_Y_bars(cdf, Y_prime, N):
     for i in range(0,N):
         Y_bar[i] = use_cdf(cdf, Y_prime)
     return Y_bar
+
+if __name__ == "__main__":
+    #Previous year's IBM close dates (Jul 19, 2004 to July 18, 2005)
+    #data = open("./data/19072004_19072005_IBM.csv")
+    #data = open("./data/10days_IBM.csv")
+    #lines = data.readlines()
+    #data.close()
+
+    #X_vals = np.zeros(len(lines)-1)
+    #for i in range(0,len(lines)-1):
+    #    X_vals[i] = float(lines[i+1].split(",")[4].strip())
+    nruns = 100
+    N = 100
+    X_vals = np.log(np.array([78.09,80.25])) #HL Jul 18, 2005
+    #X_vals = np.array([78.38,78.21]) #OC Jul 18, 2005 
+    calc_cdf(X_vals)

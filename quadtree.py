@@ -136,8 +136,9 @@ def calc_quad_tree_ev(x0, Y_bar, N, E):
     return(ret_val)
 
 def main():
-    
-    return 0
+    Y_bar = np.random.normal(size=1)
+    N = 10
+    calc_quad_tree_ev(x0, Y_bar, N, E=70)
 
 if __name__ == "__main__":
     main()
