@@ -15,11 +15,11 @@ def main():
 
     #X_vals = np.zeros(len(lines)-1)
     #for i in range(0,len(lines)-1):
-    #    X_vals[i] = float(lines[i+1].split(",")[4].strip())
+    #    X_vals[i] = np.log(float(lines[i+1].split(",")[4].strip()))
     nruns = 100
     N = 100
     X_vals = np.log(np.array([78.09,80.25])) #HL Jul 18, 2005
-    #X_vals = np.array([78.38,78.21]) #OC Jul 18, 2005 
+    #X_vals = np.log(np.array([78.38,78.21])) #OC Jul 18, 2005 
     s0 = 80.99 # open price for Jul 19, 2005 O: 80.99, H:81.37, L: 80.02, C: 80.02
     x0 = np.log(s0) 
     res = np.zeros(nruns)
