@@ -45,7 +45,7 @@ def mutation_step(X, Y):
     for i in range(1,M):
         Y_prime[i] = Y_prime[i-1] + h_M_alpha*(nu-Y_prime[i-1])+sqrt_h_M_psi_u[i-1]
         sig = calc_sigma(Y_prime[i-1])
-        X_prime[i] = X_prime[i-1] + h_M_alpha*(mu-sig**2/2)+sig*sqrt_h_M_u_prime[i-1]
+        X_prime[i] = X_prime[i-1] + dt*(mu-sig**2/2)+sig*sqrt_h_M_u_prime[i-1]
 
     return (X_prime[M-1], Y_prime[M-1])
 
