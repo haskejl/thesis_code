@@ -6,7 +6,7 @@ import estimdist as est
 import quadtree as qt
 
 def main():
-    workbook = xlsxwriter.Workbook("quadtree_output.xlsx")
+    #workbook = xlsxwriter.Workbook("quadtree_output.xlsx")
     #Previous year's IBM close dates (Jul 19, 2004 to July 18, 2005)
     #data = open("./data/19072004_19072005_IBM.csv")
     #data = open("./data/10days_IBM.csv")
