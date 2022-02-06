@@ -124,7 +124,9 @@ def calc_cdf(X):
         #Use the n (X',Y') pairs to pick a realized value of Y' for the next time step
         sel_res = selection_step(X_prime_out, Y_prime_out, X[i], n)
         Y_t_i = sel_res[0]
-        cdf_out = sel_res[1]
+    # Can hold out on this calculation since sel_res isn't scoped to the loop & it isn't required to be set
+    #  every time to calculate the next result
+    cdf_out = sel_res[1]
     return(cdf_out, Y_prime_out)
 
 def gen_Y_bars(cdf, Y_prime, N):
