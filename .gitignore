@@ -1,4 +1,5 @@
-quadtree_output.xlsx
+*.xlsx
 __pycache__/
-fig.png
+*.png
 *.zip
+*.txt
