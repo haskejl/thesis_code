@@ -5,7 +5,7 @@ import bsfunc as bsf
 import estimdist as est
 import quadtree as qt
 
-def main():
+def main_quadtree_one_strike():
     #workbook = xlsxwriter.Workbook("quadtree_output.xlsx")
     #Previous year's IBM close dates (Jul 19, 2004 to July 18, 2005)
     #data = open("./data/19072004_19072005_IBM.csv")
@@ -19,16 +19,16 @@ def main():
     nruns = 100
     N = 100
     #strikes = np.array([70, 75]) #smaller array for testing
-    strikes = np.array([60, 70, 75, 80, 85, 90, 95])
+    strike = 70
     X_vals = np.log(np.array([78.09,80.25])) #HL Jul 18, 2005
     #X_vals = np.log(np.array([78.38,78.21])) #OC Jul 18, 2005 
     s0 = 80.99 # open price for Jul 19, 2005 O: 80.99, H:81.37, L: 80.02, C: 80.02
     x0 = np.log(s0) 
-    res = np.zeros((nruns, len(strikes)))
+    res = np.zeros(nruns)
     print("Calculating cdf...")
     cdf_Ybar = est.calc_cdf(X_vals)
-    row = 1
-    col = 0
+    #row = 1
+    #col = 0
     #worksheet = workbook.add_worksheet("Results")
     #worksheet.write(0, 0, "CDF")
     #worksheet.write(0, 1, "Y Bar")
@@ -40,12 +40,12 @@ def main():
 
     for run in range(0,nruns):
         print("Run #", run+1, "/", nruns)
-        for strike in range(0, len(strikes)):
-            Y_bar = est.gen_Y_bars(cdf_Ybar[0], cdf_Ybar[1], N)
-            res[run,strike] = qt.calc_quad_tree_ev(x0, Y_bar, N, E=strikes[strike])
+
+        Y_bar = est.gen_Y_bars(cdf_Ybar[0], cdf_Ybar[1], N)
+        res[run] = qt.calc_quad_tree_ev(x0, Y_bar, N, E=strike)
         #print()
     
-    bs_price = bsf.bs_call(s0, strikes, 43/252, 0.0343, 0.234, 0)
+    bs_price = bsf.bs_call(s0, strike, 43/252, 0.0343, 0.234, 0)
     #row = 1
     #col = 4
     #worksheet.write(0, 4, "Overall EV:")
@@ -53,13 +53,43 @@ def main():
     #worksheet.write(1, 4, "BS Price:")
     #worksheet.write(1, 5, bs_price)
     print()
-    for i in range(0,len(strikes)):
-        print("For strike ", strikes[i], ":")
-        print("Overall EV for strike:",strikes[i]," = ", np.mean(res[:,i]))
-        print("BS Price for assumptions = ", bs_price[i])
-        print()
+    print("For strike ", strike, ":")
+    print("Overall EV for strike, = ", np.mean(res))
+    print("BS Price for assumptions = ", bs_price)
     #workbook.close()
     return 0
 
+def main_quadtree_all_strikes():
+    nruns = 100
+    N = 100
+    #strikes = np.array([70, 75]) #smaller array for testing
+    strikes = np.array([60, 70, 75, 80, 85, 90, 95])
+    X_vals = np.log(np.array([78.09,80.25])) #HL Jul 18, 2005
+    #X_vals = np.log(np.array([78.38,78.21])) #OC Jul 18, 2005 
+    s0 = 80.99 # open price for Jul 19, 2005 O: 80.99, H:81.37, L: 80.02, C: 80.02
+    x0 = np.log(s0) 
+    res = np.zeros((nruns, len(strikes)))
+    print("Calculating cdf...")
+    cdf_Ybar = est.calc_cdf(X_vals)
+
+    for run in range(0,nruns):
+        print("Run #", run+1, "/", nruns)
+        for strike in range(0, len(strikes)):
+            Y_bar = est.gen_Y_bars(cdf_Ybar[0], cdf_Ybar[1], N)
+            res[run,strike] = qt.calc_quad_tree_ev(x0, Y_bar, N, E=strikes[strike])
+        #print()
+    
+    bs_price = bsf.bs_call(s0, strikes, 43/252, 0.0343, 0.234, 0)
+
+    print()
+    for i in range(0,len(strikes)):
+        print("For strike ", strikes[i], ":")
+        print("Overall EV for strike: = ", np.mean(res[:,i]))
+        print("BS Price for assumptions = ", bs_price[i])
+        print()
+
+    return 0
+
 if __name__ == "__main__":
-    main()
+    #main_quadtree_one_strike()
+    main_quadtree_all_strikes()
