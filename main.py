@@ -4,6 +4,7 @@ import numpy as np
 import bsfunc as bsf
 import estimdist as est
 import quadtree as qt
+import comb_s_v_tree as svt
 
 def main_quadtree_one_strike():
     #workbook = xlsxwriter.Workbook("quadtree_output.xlsx")
@@ -92,4 +93,5 @@ def main_quadtree_all_strikes():
 
 if __name__ == "__main__":
     #main_quadtree_one_strike()
-    main_quadtree_all_strikes()
+    #main_quadtree_all_strikes()
+    svt.calc_sv_tree(10, 5, 5, np.log(10), 0.25**2)
