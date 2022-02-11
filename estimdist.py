@@ -26,8 +26,8 @@ def mutation_step(X, Y):
     h = 1 #day
     #M selected based on page 23
     M = 300
-    dt = h/M
-    sqrt_h_M = np.sqrt(dt)
+    h_M = h/M
+    sqrt_h_M = np.sqrt(h_M)
     
     Y_prime = np.zeros(M)
     X_prime = np.zeros(M)
@@ -38,7 +38,7 @@ def mutation_step(X, Y):
     u = np.random.normal(size = M)
     u_prime = np.random.normal(size = M)
 
-    h_M_alpha = dt*alpha
+    h_M_alpha = h_M*alpha
     # psi is currently constant
     sqrt_h_M_psi_u = sqrt_h_M*calc_psi(Y_prime[0])*u
     sqrt_h_M_u_prime = sqrt_h_M*u_prime
@@ -46,7 +46,7 @@ def mutation_step(X, Y):
     for i in range(1,M):
         Y_prime[i] = Y_prime[i-1] + h_M_alpha*(nu-Y_prime[i-1])+sqrt_h_M_psi_u[i-1]
         sig = calc_sigma(Y_prime[i-1])
-        X_prime[i] = X_prime[i-1] + dt*(mu-sig**2/2)+sig*sqrt_h_M_u_prime[i-1]
+        X_prime[i] = X_prime[i-1] + h_M*(mu-sig**2/2)+sig*sqrt_h_M_u_prime[i-1]
 
     return (X_prime[M-1], Y_prime[M-1])
 
