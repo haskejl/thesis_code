@@ -22,6 +22,30 @@ class QuadTreeNode:
         self.under_me = under_me #allows a singularly linked list for navigating through a time moment
         self.probability = probability
 
+    def set_successors(self, nodes, node_j):
+        self.upp = nodes[node_j+1]
+        self.up = nodes[node_j]
+        self.down = nodes[node_j-1]
+        self.downn = nodes[node_j-2]
+
+    def set_succ_probs(self, p1, p2, p3, p4):
+        self.upp.probability = self.upp.probability + p1*self.probability
+        self.up.probability = self.up.probability + p2*self.probability
+        self.down.probability = self.down.probability + p3*self.probability
+        self.downn.probability = self.downn.probability + p4*self.probability
+
+    # Removes any nodes with P(node)=0 under this node in the current time moment
+    def remove_p_eq_0_nodes(self):
+        curr_node = last_node = self
+        assert self.probability != 0, "Error: this node's probability is zero"
+
+        while(curr_node != None):
+            if(curr_node.probability == 0):
+                last_node.under_me = curr_node.under_me
+            else:
+                last_node = curr_node
+            curr_node = curr_node.under_me
+
     def print_mini_tree(self):
         print("Me: ", self.x)
         print(self.upp.x, " ", self.up.x, " ", self.down.x, " ", self.downn.x)
@@ -50,6 +74,7 @@ class QuadTreeNode:
         #ax.scatter(x,y)
         fig.savefig("fig.png", dpi=1000)
         fig.show()
+#### End class QuadTreeNode
 
 #sigma as defined on page 23
 def calc_sigma(y):
@@ -71,10 +96,8 @@ def calc_quad_tree_ev(x0, Y_bar, N, E, payoff_func):
     mul_pt = sig*np.sqrt(dt)
 
     for i in range(0,N):
-        #print("Running step: ", i)
-        # Must be a ceiling function or j*sigma(Y)*sqrt(dt) may end up below the point
-        j_upp = int(np.ceil((top_node.x)/mul_pt[i]))
-        j_downn = int(np.ceil((bottom_node.x)/mul_pt[i]))
+        j_upp = int(np.ceil(top_node.x/mul_pt[i]))
+        j_downn = int(np.ceil(bottom_node.x/mul_pt[i]))
         j = range(j_upp+1, j_downn-3,-1)
 
         # Calculate all of the successors with the drift term
@@ -95,77 +118,44 @@ def calc_quad_tree_ev(x0, Y_bar, N, E, payoff_func):
             assert d1 <= 0, "d1 = " + str(d1) + ", but should be <= 0"
             assert d2 >= 0, "d2 = " + str(d2) + ", but should be >= 0"
 
-            p1 = 0
-            p2 = 0
-            p3 = 0
-            p4 = 0
+            p1 = p2 = p3 = p4 = 0
             if(-d1 < d2):
                 q = d1/mul_pt[i]
                 p4 = p
                 p1 = 0.5*(1+q+q**2)-p
                 p2 = 3*p-q**2
                 p3 = 0.5*(1-q+q**2)-3*p
-                assert p1 > 0, "p1 = " + str(p1) + ", but should be > 0 for -d1 < d2"
-                assert p2 > 0, "p2 = " + str(p2) + ", but should be > 0 for -d1 < d2"
-                assert p3 > 0, "p3 = " + str(p3) + ", but should be > 0 for -d1 < d2"
-                assert p1 < 1, "p1 = " + str(p1) + ", but should be < 1 for -d1 < d2"
-                assert p2 < 1, "p2 = " + str(p2) + ", but should be < 1 for -d1 < d2"
-                assert p3 < 1, "p3 = " + str(p3) + ", but should be < 1 for -d1 < d2"
+                assert p1 > 0 and p1 < 1, "p1 = " + str(p1) + " for -d1 < d2"
+                assert p2 > 0 and p2 < 1, "p2 = " + str(p2) + " for -d1 < d2"
+                assert p3 > 0 and p3 < 1, "p3 = " + str(p3) + " for -d1 < d2"
             else:
                 q = d2/mul_pt[i]
                 p1 = p
                 p2 = 0.5*(1+q+q**2)-3*p
                 p3 = 3*p-q**2
                 p4 = 0.5*(1-q+q**2)-p
-                assert p2 > 0, "p2 = " + str(p2) + ", but should be > 0 for -d1 > d2"
-                assert p3 > 0, "p3 = " + str(p3) + ", but should be > 0 for -d1 > d2"
-                assert p4 > 0, "p4 = " + str(p4) + ", but should be > 0 for -d1 > d2"
-                assert p2 < 1, "p2 = " + str(p2) + ", but should be < 1 for -d1 > d2"
-                assert p3 < 1, "p3 = " + str(p3) + ", but should be < 1 for -d1 > d2"
-                assert p4 < 1, "p4 = " + str(p4) + ", but should be < 1 for -d1 > d2"
+                assert p2 > 0 and p2 < 1, "p2 = " + str(p2) + " for -d1 > d2"
+                assert p3 > 0 and p3 < 1, "p3 = " + str(p3) + " for -d1 > d2"
+                assert p4 > 0 and p4 < 1, "p4 = " + str(p4) + " for -d1 > d2"
             
             #Set the successor values
-            curr_node.upp = nodes[node_j+1]
-            curr_node.up = nodes[node_j]
-            curr_node.down = nodes[node_j-1]
-            curr_node.downn = nodes[node_j-2]
-            # Calculate the conditional probabilities of the successors 
-            curr_node.upp.probability = curr_node.upp.probability + p1*curr_node.probability
-            curr_node.up.probability = curr_node.up.probability + p2*curr_node.probability
-            curr_node.down.probability = curr_node.down.probability + p3*curr_node.probability
-            curr_node.downn.probability = curr_node.downn.probability + p4*curr_node.probability
-
+            curr_node.set_successors(nodes, node_j)
+            # Calculate the conditional probabilities of the successors
+            curr_node.set_succ_probs(p1, p2, p3, p4)
             # Go to the next node in this period
             curr_node = curr_node.under_me
+        # Remove unneeded nodes
+        top_node.remove_p_eq_0_nodes()
         
-        # Sometimes extra nodes are generated due to the way j is generated
-        curr_node = top_node
-        last_node = top_node
-        assert top_node.probability != 0, "Error: the top node probability is zero"
-        while(curr_node != None):
-            if(curr_node.probability == 0):
-                last_node.under_me = curr_node.under_me
-            else:
-                last_node = curr_node
-            curr_node = curr_node.under_me
         # Set the top and bottom nodes for the next period
         top_node = top_node.upp
         bottom_node = bottom_node.downn
-    
-    
     # Move to the highest node of the payoff time moment
     curr_node = top_node
-    expected_val = 0
+    
     # Calculate the expected value of the payoff
+    expected_val = 0
     while(curr_node != None):
         expected_val = expected_val + payoff_func(np.exp(curr_node.x), E, r, T)*curr_node.probability
         curr_node = curr_node.under_me
     return(expected_val)
-
-def main():
-    Y_bar = np.random.normal(size=1)
-    N = 10
-    calc_quad_tree_ev(x0, Y_bar, N, E=70)
-
-if __name__ == "__main__":
-    main()

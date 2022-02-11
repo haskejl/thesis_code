@@ -23,7 +23,6 @@ def main_quadtree_one_strike():
 
         Y_bar = est.gen_Y_bars(cdf_Ybar[0], cdf_Ybar[1], N)
         res[run] = qt.calc_quad_tree_ev(x0, Y_bar, N, strike, qt.payoff_func_call)
-        #print()
     
     bs_price = bsf.bs_call(s0, strike, 42/252, 0.0343, 0.234**2, 0)
 

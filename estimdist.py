@@ -1,7 +1,8 @@
 import numpy as np
 
-#alpha, mu, and nu are defined on page 25 from the IBM specific data
+#alpha, beta, mu, and nu are defined on page 25 from the IBM specific data
 alpha = 11.85566
+beta = 4.13415
 mu = 0.04588
 nu = 0.9345938
 
@@ -12,8 +13,6 @@ def calc_phi(x):
 
 #psi as defined on page 23
 def calc_psi(y):
-    #beta as defined on page 25 from the IBM specific data
-    beta = 4.13415
     return beta
 
 #sigma as defined on page 23
@@ -23,11 +22,8 @@ def calc_sigma(y):
 #The mutation step takes in an (X,Y) pair correspoinding to t_i
 #and returns an (X',Y') pair corresponding to t_{i+1}
 def mutation_step(X, Y):
-    h = 1 #day
-    #M selected based on page 23
-    M = 300
-    h_M = h/M
-    sqrt_h_M = np.sqrt(h_M)
+    h = 1 # day
+    M = 300 # Value from p. 23
     
     Y_prime = np.zeros(M)
     X_prime = np.zeros(M)
@@ -37,7 +33,8 @@ def mutation_step(X, Y):
     #Formula 3.2
     u = np.random.normal(size = M)
     u_prime = np.random.normal(size = M)
-
+    h_M = h/M
+    sqrt_h_M = np.sqrt(h_M)
     h_M_alpha = h_M*alpha
     # psi is currently constant
     sqrt_h_M_psi_u = sqrt_h_M*calc_psi(Y_prime[0])*u
@@ -104,9 +101,7 @@ def calc_cdf(X):
     cdf_out = np.zeros(n)
     #Generate n (X',Y') pairs
     for i in range(0,n):
-        mut_res = mutation_step(X[0], nu)
-        X_prime_out[i] = mut_res[0]
-        Y_prime_out[i] = mut_res[1]
+        X_prime_out[i], Y_prime_out[i] = mutation_step(X[0], nu)
     
     #Use the n (X',Y') pairs to pick a realized value of Y' for the next time step
     sel_res = selection_step(X_prime_out, Y_prime_out, X[0], n)
@@ -115,16 +110,11 @@ def calc_cdf(X):
     for i in range(1,K):
         #Generate n (X',Y') pairs
         for j in range(0,n):
-            mut_res = mutation_step(X[i], Y_t_i)
-            X_prime_out[j] = mut_res[0]
-            Y_prime_out[j] = mut_res[1]
+            X_prime_out[j], Y_prime_out[j] = mutation_step(X[i], Y_t_i)
         
         #Use the n (X',Y') pairs to pick a realized value of Y' for the next time step
-        sel_res = selection_step(X_prime_out, Y_prime_out, X[i], n)
-        Y_t_i = sel_res[0]
-    # Can hold out on this calculation since sel_res isn't scoped to the loop & it isn't required to be set
-    #  every time to calculate the next result
-    cdf_out = sel_res[1]
+        Y_t_i, cdf_out = selection_step(X_prime_out, Y_prime_out, X[i], n)
+
     return(cdf_out, Y_prime_out)
 
 def gen_Y_bars(cdf, Y_prime, N):
@@ -132,9 +122,3 @@ def gen_Y_bars(cdf, Y_prime, N):
     for i in range(0,N):
         Y_bar[i] = use_cdf(cdf, Y_prime)
     return Y_bar
-
-if __name__ == "__main__":
-    nruns = 100
-    N = 100
-    X_vals = np.log(np.array([78.09,80.25])) #HL Jul 18, 2005
-    calc_cdf(X_vals)
