@@ -28,7 +28,7 @@ def payoff_func(x, E, r, T):
 def calc_quad_tree_ev(x0, Y_bar, N, E):
     # Time is 43 trading days from Jul. 19 to Sep. 16 since sigma_sqility was calculated based on days
     # If we count Jul. 19th (assume valuation on open), The 1st Monday of Sept. isn't a trading day
-    T = 43/252 
+    T = 42/252 
     p = 0.14
     # r value is from p. 25
     r = 0.0343

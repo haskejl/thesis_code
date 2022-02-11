@@ -23,7 +23,7 @@ def main_quadtree_one_strike():
     strike = 70
     X_vals = np.log(np.array([78.09,80.25])) #HL Jul 18, 2005
     #X_vals = np.log(np.array([78.38,78.21])) #OC Jul 18, 2005 
-    s0 = 80.99 # open price for Jul 19, 2005 O: 80.99, H:81.37, L: 80.02, C: 80.02
+    s0 = 83.7 # Price given on p. 36
     x0 = np.log(s0) 
     res = np.zeros(nruns)
     print("Calculating cdf...")
@@ -46,7 +46,7 @@ def main_quadtree_one_strike():
         res[run] = qt.calc_quad_tree_ev(x0, Y_bar, N, E=strike)
         #print()
     
-    bs_price = bsf.bs_call(s0, strike, 43/252, 0.0343, 0.234, 0)
+    bs_price = bsf.bs_call(s0, strike, 42/252, 0.0343, 0.234**2, 0)
     #row = 1
     #col = 4
     #worksheet.write(0, 4, "Overall EV:")
@@ -67,7 +67,7 @@ def main_quadtree_all_strikes():
     strikes = np.array([60, 70, 75, 80, 85, 90, 95])
     X_vals = np.log(np.array([78.09,80.25])) #HL Jul 18, 2005
     #X_vals = np.log(np.array([78.38,78.21])) #OC Jul 18, 2005 
-    s0 = 80.99 # open price for Jul 19, 2005 O: 80.99, H:81.37, L: 80.02, C: 80.02
+    s0 = 83.7 # Price given on p. 36
     x0 = np.log(s0) 
     res = np.zeros((nruns, len(strikes)))
     print("Calculating cdf...")
@@ -80,7 +80,7 @@ def main_quadtree_all_strikes():
             res[run,strike] = qt.calc_quad_tree_ev(x0, Y_bar, N, E=strikes[strike])
         #print()
     
-    bs_price = bsf.bs_call(s0, strikes, 43/252, 0.0343, 0.234, 0)
+    bs_price = bsf.bs_call(s0, strikes, 42/252, 0.0343, 0.234**2, 0)
 
     print()
     for i in range(0,len(strikes)):
@@ -92,6 +92,6 @@ def main_quadtree_all_strikes():
     return 0
 
 if __name__ == "__main__":
-    #main_quadtree_one_strike()
+    main_quadtree_one_strike()
     #main_quadtree_all_strikes()
-    svt.calc_sv_tree(10, 5, 5, np.log(10), 0.25**2)
+    #svt.calc_sv_tree(10, 5, 5, np.log(10), 0.25**2)
