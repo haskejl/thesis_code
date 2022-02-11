@@ -1,5 +1,10 @@
 import numpy as np
 
+#alpha, mu, and nu are defined on page 25 from the IBM specific data
+alpha = 11.85566
+mu = 0.04588
+nu = 0.9345938
+
 #phi as defined on page 10
 def calc_phi(x):
     # Written using multiplication to allow for vectorized operations
@@ -23,10 +28,6 @@ def mutation_step(X, Y):
     M = 300
     dt = h/M
     sqrt_h_M = np.sqrt(dt)
-    #alpha, mu, and nu are defined on page 25 from the IBM specific data
-    alpha = 11.85566
-    mu = 0.04588
-    nu = 0.9345938
     
     Y_prime = np.zeros(M)
     X_prime = np.zeros(M)
@@ -97,9 +98,6 @@ def calc_cdf(X):
     n = 1000
     #K is the length of the historical data (in days for daily data)
     K = len(X)
-    
-    #nu from page 25 in the IBM data
-    nu = 0.9345938
 
     X_prime_out = np.zeros(n)
     Y_prime_out = np.zeros(n)
@@ -136,17 +134,7 @@ def gen_Y_bars(cdf, Y_prime, N):
     return Y_bar
 
 if __name__ == "__main__":
-    #Previous year's IBM close dates (Jul 19, 2004 to July 18, 2005)
-    #data = open("./data/19072004_19072005_IBM.csv")
-    #data = open("./data/10days_IBM.csv")
-    #lines = data.readlines()
-    #data.close()
-
-    #X_vals = np.zeros(len(lines)-1)
-    #for i in range(0,len(lines)-1):
-    #    X_vals[i] = float(lines[i+1].split(",")[4].strip())
     nruns = 100
     N = 100
     X_vals = np.log(np.array([78.09,80.25])) #HL Jul 18, 2005
-    #X_vals = np.array([78.38,78.21]) #OC Jul 18, 2005 
     calc_cdf(X_vals)

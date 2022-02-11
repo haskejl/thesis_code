@@ -3,6 +3,14 @@ import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 
+T = 42/252 
+p = 0.14
+# r value is from p. 25
+r = 0.0343
+
+# Class contains a Quadrinomial tree data structure with a singularly linked list at each time
+#  moment. This data structure could be replaced by 2 linked lists in the algorithm to reduce
+#  the memory overhead, but provides good functionality for testing and debugging.
 class QuadTreeNode:
     def __init__(self, x, probability=0, 
     upp=None, up=None, down=None, downn=None, under_me=None):
@@ -17,23 +25,45 @@ class QuadTreeNode:
     def print_mini_tree(self):
         print("Me: ", self.x)
         print(self.upp.x, " ", self.up.x, " ", self.down.x, " ", self.downn.x)
+    
+    def plot_tree(self, depth=30):
+        curr_node = self
+        top_node = sef.upp
+        fig, ax = plt.subplots()
+        for i in range(0,depth):
+            while(curr_node != None):
+                x = np.array([i, i+1])
+                y = np.array([curr_node.x, curr_node.upp.x])
+                ax.plot(x , y, color="lawngreen", linewidth=0.2)
+                x = np.array([i, i+1])
+                y = np.array([curr_node.x, curr_node.up.x])
+                ax.plot(x , y, color="green", linewidth=0.2)
+                x = np.array([i, i+1])
+                y = np.array([curr_node.x, curr_node.down.x])
+                ax.plot(x , y, color="firebrick", linewidth=0.2)
+                x = np.array([i, i+1])
+                y = np.array([curr_node.x, curr_node.downn.x])
+                ax.plot(x , y, color="tomato", linewidth=0.2)
+                curr_node = curr_node.under_me
+            curr_node = top_node
+            top_node = curr_node.upp
+        #ax.scatter(x,y)
+        fig.savefig("fig.png", dpi=1000)
+        fig.show()
 
 #sigma as defined on page 23
 def calc_sigma(y):
     return np.exp(-abs(y))
 
-def payoff_func(x, E, r, T):
-    return max(x-E,0)*np.exp(-r*T)
+def payoff_func_call(S, E, r, T):
+    return max(S-E,0)*np.exp(-r*T)
 
-def calc_quad_tree_ev(x0, Y_bar, N, E):
-    # Time is 43 trading days from Jul. 19 to Sep. 16 since sigma_sqility was calculated based on days
-    # If we count Jul. 19th (assume valuation on open), The 1st Monday of Sept. isn't a trading day
-    T = 42/252 
-    p = 0.14
-    # r value is from p. 25
-    r = 0.0343
+def payoff_func_put(S, E, r, T):
+    return max(E-S,0)*np.exp(-r*T)
+
+def calc_quad_tree_ev(x0, Y_bar, N, E, payoff_func):
     dt = T/N
-    #print("Calculating the tree...")
+    
     # Set the base node for the tree
     top_node = bottom_node = base_node = QuadTreeNode(x0, 1)
     sig = calc_sigma(Y_bar)
@@ -51,14 +81,14 @@ def calc_quad_tree_ev(x0, Y_bar, N, E):
         nodes = {}
         for k in j:
             nodes.update({k: QuadTreeNode(k*mul_pt[i]+add_pt[i])})
-            #nodes = nodes | {k: QuadTreeNode(k*mul_pt[i]+add_pt[i])} # Requires Python 3.9+
+
         # Since the nodes are shared, set up the linked list here
         for k in j[0:(len(j)-1)]:
             nodes[k].under_me = nodes[k-1]
         
         curr_node = top_node
         while(curr_node != None):
-            node_j = int(np.ceil((curr_node.x)/mul_pt[i]))
+            node_j = int(np.ceil(curr_node.x/mul_pt[i]))
 
             d1 = curr_node.x - (node_j*mul_pt[i])
             d2 = curr_node.x - ((node_j-1)*mul_pt[i])
@@ -100,7 +130,6 @@ def calc_quad_tree_ev(x0, Y_bar, N, E):
             curr_node.down = nodes[node_j-1]
             curr_node.downn = nodes[node_j-2]
             # Calculate the conditional probabilities of the successors 
-            #  given each of it's predecessors has happened
             curr_node.upp.probability = curr_node.upp.probability + p1*curr_node.probability
             curr_node.up.probability = curr_node.up.probability + p2*curr_node.probability
             curr_node.down.probability = curr_node.down.probability + p3*curr_node.probability
@@ -123,46 +152,15 @@ def calc_quad_tree_ev(x0, Y_bar, N, E):
         top_node = top_node.upp
         bottom_node = bottom_node.downn
     
-    # Calculate the ev of the payoff of the final row of options
-    #print("Calculating EV...")
+    
     # Move to the highest node of the payoff time moment
     curr_node = top_node
-    ret_val = 0
-    #tot_prob = 0
+    expected_val = 0
+    # Calculate the expected value of the payoff
     while(curr_node != None):
-        #tot_prob = tot_prob + curr_node.probability
-        ret_val = ret_val + payoff_func(np.exp(curr_node.x), E, r, T)*curr_node.probability
+        expected_val = expected_val + payoff_func(np.exp(curr_node.x), E, r, T)*curr_node.probability
         curr_node = curr_node.under_me
-    #print("EV for run = ", ret_val)
-    # This deviates slightly from 1 due to floating point error
-    #print("Total Prob for run = ", tot_prob)
-    curr_node = base_node
-    top_node = base_node.upp
-
-    '''fig, ax = plt.subplots()
-    for i in range(0,30):
-        while(curr_node != None):
-            x = np.array([i, i+1])
-            y = np.array([curr_node.x, curr_node.upp.x])
-            ax.plot(x , y, color="lawngreen", linewidth=0.2)
-            x = np.array([i, i+1])
-            y = np.array([curr_node.x, curr_node.up.x])
-            ax.plot(x , y, color="green", linewidth=0.2)
-            x = np.array([i, i+1])
-            y = np.array([curr_node.x, curr_node.down.x])
-            ax.plot(x , y, color="firebrick", linewidth=0.2)
-            x = np.array([i, i+1])
-            y = np.array([curr_node.x, curr_node.downn.x])
-            ax.plot(x , y, color="tomato", linewidth=0.2)
-            #print(curr_node.x, "\t", curr_node.probability)
-            curr_node = curr_node.under_me
-        #print()
-        curr_node = top_node
-        top_node = curr_node.upp
-    #ax.scatter(x,y)
-    fig.savefig("fig.png", dpi=1000)
-    fig.show()'''
-    return(ret_val)
+    return(expected_val)
 
 def main():
     Y_bar = np.random.normal(size=1)
