@@ -43,8 +43,8 @@ def calc_quad_tree_ev(x0, Y_bar, N, E):
     for i in range(0,N):
         #print("Running step: ", i)
         # Must be a ceiling function or j*sigma(Y)*sqrt(dt) may end up below the point
-        j_upp = int(np.ceil((top_node.x-add_pt[i])/mul_pt[i]))
-        j_downn = int(np.ceil((bottom_node.x-add_pt[i])/mul_pt[i]))
+        j_upp = int(np.ceil((top_node.x)/mul_pt[i]))
+        j_downn = int(np.ceil((bottom_node.x)/mul_pt[i]))
         j = range(j_upp+1, j_downn-3,-1)
 
         # Calculate all of the successors with the drift term
@@ -58,10 +58,10 @@ def calc_quad_tree_ev(x0, Y_bar, N, E):
         
         curr_node = top_node
         while(curr_node != None):
-            node_j = int(np.ceil((curr_node.x-add_pt[i])/mul_pt[i]))
+            node_j = int(np.ceil((curr_node.x)/mul_pt[i]))
 
-            d1 = curr_node.x - (node_j*mul_pt[i]+add_pt[i])
-            d2 = curr_node.x - ((node_j-1)*mul_pt[i]+add_pt[i])
+            d1 = curr_node.x - (node_j*mul_pt[i])
+            d2 = curr_node.x - ((node_j-1)*mul_pt[i])
             assert d1 <= 0, "d1 = " + str(d1) + ", but should be <= 0"
             assert d2 >= 0, "d2 = " + str(d2) + ", but should be >= 0"
 
@@ -70,7 +70,7 @@ def calc_quad_tree_ev(x0, Y_bar, N, E):
             p3 = 0
             p4 = 0
             if(-d1 < d2):
-                q = (curr_node.x-node_j*mul_pt[i])/mul_pt[i]#d1/mul_pt[i]
+                q = d1/mul_pt[i]
                 p4 = p
                 p1 = 0.5*(1+q+q**2)-p
                 p2 = 3*p-q**2
@@ -82,7 +82,7 @@ def calc_quad_tree_ev(x0, Y_bar, N, E):
                 assert p2 < 1, "p2 = " + str(p2) + ", but should be < 1 for -d1 < d2"
                 assert p3 < 1, "p3 = " + str(p3) + ", but should be < 1 for -d1 < d2"
             else:
-                q = (curr_node.x-(node_j-1)*mul_pt[i])/mul_pt[i]#d2/mul_pt[i]
+                q = d2/mul_pt[i]
                 p1 = p
                 p2 = 0.5*(1+q+q**2)-3*p
                 p3 = 3*p-q**2
