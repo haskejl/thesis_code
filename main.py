@@ -50,7 +50,7 @@ def main_quadtree_all_strikes():
         print("Run #", run+1, "/", nruns)
         for strike in range(0, len(strikes)):
             Y_bar = est.gen_Y_bars(cdf_Ybar[0], cdf_Ybar[1], N)
-            res[run,strike] = qt.calc_quad_tree_ev(x0, Y_bar, N, E=strikes[strike])
+            res[run,strike] = qt.calc_quad_tree_ev(x0, Y_bar, N, strikes[strike], qt.payoff_func_call)
         #print()
     
     bs_price = bsf.bs_call(s0, strikes, 42/252, 0.0343, 0.234**2, 0)
