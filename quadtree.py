@@ -4,7 +4,6 @@ matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 
 T = 42/252 
-p = 0.14
 # r value is from p. 25
 r = 0.0343
 
@@ -52,7 +51,7 @@ class QuadTreeNode:
     
     def plot_tree(self, depth=30):
         curr_node = self
-        top_node = sef.upp
+        top_node = self.upp
         fig, ax = plt.subplots()
         for i in range(0,depth):
             while(curr_node != None):
@@ -86,27 +85,25 @@ def payoff_func_call(S, E, r, T):
 def payoff_func_put(S, E, r, T):
     return max(E-S,0)*np.exp(-r*T)
 
-def calc_quad_tree_ev(x0, Y_bar, N, E, payoff_func):
+def calc_quad_tree_ev(x0, Y_bar, N, E, payoff_func, p):
     dt = T/N
     
     # Set the base node for the tree
     top_node = bottom_node = base_node = QuadTreeNode(x0, 1)
-    sig = calc_sigma(Y_bar)
+    sig = calc_sigma(2*Y_bar)
     add_pt = (r-sig**2/2)*dt
     mul_pt = sig*np.sqrt(dt)
 
     for i in range(0,N):
-        j_upp = int(np.ceil(top_node.x/mul_pt[i]))
-        j_downn = int(np.ceil(bottom_node.x/mul_pt[i]))
-        j = range(j_upp+1, j_downn-3,-1)
+        j_uppp = int(np.ceil(top_node.x/mul_pt[i])+2)
+        j_downn = int(np.ceil(bottom_node.x/mul_pt[i])-2)
 
         # Calculate all of the successors with the drift term
         nodes = {}
-        for k in j:
+        nodes.update({j_downn: QuadTreeNode(j_downn*mul_pt[i]+add_pt[i])})
+        for k in range(j_downn+1, j_uppp):
             nodes.update({k: QuadTreeNode(k*mul_pt[i]+add_pt[i])})
-
-        # Since the nodes are shared, set up the linked list here
-        for k in j[0:(len(j)-1)]:
+            # Since the nodes are shared, set up the linked list here
             nodes[k].under_me = nodes[k-1]
         
         curr_node = top_node
@@ -152,7 +149,7 @@ def calc_quad_tree_ev(x0, Y_bar, N, E, payoff_func):
         bottom_node = bottom_node.downn
     # Move to the highest node of the payoff time moment
     curr_node = top_node
-    
+
     # Calculate the expected value of the payoff
     expected_val = 0
     while(curr_node != None):

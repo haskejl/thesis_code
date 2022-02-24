@@ -21,18 +21,19 @@ def calc_sigma(y):
 
 #The mutation step takes in an (X,Y) pair correspoinding to t_i
 #and returns an (X',Y') pair corresponding to t_{i+1}
-def mutation_step(X, Y):
+def mutation_step(X, Y, n):
+    assert n == len(Y) or len(Y)==1, "len(Y) should equal 1 or n" + "but len(Y)=" + str(len(Y)) + " and n=" + str(n)
     h = 1 # day
     M = 300 # Value from p. 23
     
-    Y_prime = np.zeros(M)
-    X_prime = np.zeros(M)
-    X_prime[0] = X
-    Y_prime[0] = Y
+    X_prime = np.zeros((M, n))
+    Y_prime = np.zeros((M, n))
+    X_prime[0][:] = X
+    Y_prime[0][:] = Y
     
     #Formula 3.2
-    u = np.random.normal(size = M)
-    u_prime = np.random.normal(size = M)
+    u = np.random.normal(size = (M,n))
+    u_prime = np.random.normal(size = (M,n))
     h_M = h/M
     sqrt_h_M = np.sqrt(h_M)
     h_M_alpha = h_M*alpha
@@ -47,16 +48,18 @@ def mutation_step(X, Y):
 
     return (X_prime[M-1], Y_prime[M-1])
 
-def use_cdf(cdf, Y_primes):
-    rand_num = np.random.uniform()
+def use_cdf(cdf, Y_primes, n):
+    rand_num = np.random.uniform(size=n)
     res = 0
     start = 0
+    Y_primes_out = np.zeros(n)
 
-    for i in range(start,len(cdf)):
-        if rand_num <= cdf[i]:
-            res = i
-            break
-    return Y_primes[res]
+    for i in range(0, n):
+        for j in range(start,len(cdf)):
+            if rand_num[i] <= cdf[j]:
+                Y_primes_out[i] = Y_primes[j]
+                break
+    return Y_primes_out
 
 #The selection step takes in n (X',Y') pairs and the actual value of X for that time moment
 #it then generates a cdf for the discrete distribution and uses a uniformly distributed random number from the numpy library to select a value of Y' from this distribution
@@ -68,16 +71,16 @@ def selection_step(X_primes, Y_primes, x, n):
     while phis[0] == 0:
         phis = np.delete(phis, 0)
         Y_primes = np.delete(Y_primes, 0)
-    n = len(Y_primes)
-    cdf = np.zeros(n)
+    n_temp = len(Y_primes)
+    cdf = np.zeros(n_temp)
     cdf[0] = phis[0]
     i = 1
-    while i < n:
+    while i < n_temp:
         # Remove any values with 0 probability
         if phis[i] == 0:
             phis = np.delete(phis, i)
             Y_primes = np.delete(Y_primes, i)
-            n -= 1
+            n_temp -= 1
         else:
             cdf[i] = cdf[i-1] + phis[i]
             i += 1
@@ -87,8 +90,8 @@ def selection_step(X_primes, Y_primes, x, n):
     # This gets rid of floating point error, maybe not the best way to do it,
     #  but it guarantees a probability of 1. Typically these probabilities are on the 
     #  order of 10^-5 to 10^-3 whereas the error is much smaller 10^-16
-    cdf[n-1] = round(cdf[n-1], 0)
-    return (use_cdf(cdf, Y_primes), cdf)
+    cdf[n_temp-1] = round(cdf[n_temp-1], 0)
+    return (use_cdf(cdf, Y_primes, n), cdf)
 
 def calc_cdf(X):
     #n is selected from p.23 (1000)
@@ -100,8 +103,7 @@ def calc_cdf(X):
     Y_prime_out = np.zeros(n)
     cdf_out = np.zeros(n)
     #Generate n (X',Y') pairs
-    for i in range(0,n):
-        X_prime_out[i], Y_prime_out[i] = mutation_step(X[0], nu)
+    X_prime_out, Y_prime_out = mutation_step(X[0], np.array([nu]), n)
     
     #Use the n (X',Y') pairs to pick a realized value of Y' for the next time step
     sel_res = selection_step(X_prime_out, Y_prime_out, X[0], n)
@@ -109,16 +111,9 @@ def calc_cdf(X):
 
     for i in range(1,K):
         #Generate n (X',Y') pairs
-        for j in range(0,n):
-            X_prime_out[j], Y_prime_out[j] = mutation_step(X[i], Y_t_i)
+        X_prime_out, Y_prime_out = mutation_step(X[i], Y_t_i, n)
         
         #Use the n (X',Y') pairs to pick a realized value of Y' for the next time step
         Y_t_i, cdf_out = selection_step(X_prime_out, Y_prime_out, X[i], n)
 
     return(cdf_out, Y_prime_out)
-
-def gen_Y_bars(cdf, Y_prime, N):
-    Y_bar = np.zeros(N)
-    for i in range(0,N):
-        Y_bar[i] = use_cdf(cdf, Y_prime)
-    return Y_bar
