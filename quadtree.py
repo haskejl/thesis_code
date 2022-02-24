@@ -90,6 +90,7 @@ def calc_quad_tree_ev(x0, Y_bar, N, E, payoff_func, p):
     
     # Set the base node for the tree
     top_node = bottom_node = base_node = QuadTreeNode(x0, 1)
+    
     sig = calc_sigma(Y_bar)
     add_pt = (r-sig**2/2)*dt
     mul_pt = sig*np.sqrt(dt)
