@@ -66,6 +66,6 @@ def main_quadtree_all_strikes():
     return 0
 
 if __name__ == "__main__":
-    #main_quadtree_one_strike()
-    main_quadtree_all_strikes()
+    main_quadtree_one_strike()
+    #main_quadtree_all_strikes()
     #svt.calc_sv_tree(10, 5, 5, np.log(10), 0.25**2)
