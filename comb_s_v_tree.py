@@ -32,7 +32,7 @@ def calc_sv_tree(n, mz, mv, Z0, V0):
         v_tilde_max[k] = (calc_vn(1, v_tilde_max[k-1], z_tilde_max[k-1], K, theta, v_pos_max, dtn, omega))
         v_tilde_min[k] = (calc_vn(-1, v_tilde_min[k-1], z_tilde_min[k-1], K, theta, v_pos_min, dtn, omega))
         z_tilde_max[k] = (calc_zn(1, v_tilde_max[k-1], z_tilde_max[k-1], r, dtn, v_pos_max))
-        z_tilde_min[k] = (calc_zn(-1, v_tilde_min[k-1], z_tilde_min[k-1], r, dtn, v_pos_min))
+        z_tilde_min[k] = (calc_zn(-1, v_tilde_max[k-1], z_tilde_min[k-1], r, dtn, v_pos_max))
     del(v_pos_max)
     del(v_pos_min)
     
@@ -81,9 +81,15 @@ def calc_sv_tree(n, mz, mv, Z0, V0):
                 def c11(x_tilde, y_tilde): return x_tilde*y_tilde
 
                 z0_til = tilde_val(z0, grid_z[k+1,z0_i], grid_z[k+1,z0_i+1])
-                z1_til = tilde_val(z1, grid_z[k+1,z1_i], grid_z[k+1,z1_i_1])
+                # If at the boundary use 1
+                z1_til = 1
+                if z1_i != z1_i_1:
+                   z1_til = tilde_val(z1, grid_z[k+1,z1_i], grid_z[k+1,z1_i_1])
                 v0_til = tilde_val(v0, grid_v[k+1,v0_i], grid_v[k+1,v0_i+1])
-                v1_til = tilde_val(v1, grid_v[k+1,v1_i], grid_v[k+1,v1_i_1])
+                # If at the boundary use 1
+                v1_til = 1
+                if v1_i != v1_i_1:
+                    v1_til = tilde_val(v1, grid_v[k+1,v1_i], grid_v[k+1,v1_i_1])
 
                 # i_1 and i_2 are coded for 0 = -1
                 # So q0101 means i_1 = -1, i_2 = 1, i_3 = 0, i_4 = 1
