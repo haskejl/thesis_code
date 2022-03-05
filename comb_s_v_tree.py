@@ -36,11 +36,10 @@ def calc_sv_tree(n, mz, mv, Z0, V0):
     del(v_pos_max)
     del(v_pos_min)
     
-    dz = (z_tilde_max-z_tilde_min)/mz
-    dv = (v_tilde_max-v_tilde_min)/mv
+    dz = (z_tilde_max-z_tilde_min)/(mz-1)
+    dv = (v_tilde_max-v_tilde_min)/(mv-1)
     
     # Setup the grids
-    # TODO: Not currently correct
     grid_z = np.linspace(z_tilde_min, z_tilde_max, mz, axis=-1)
     grid_v = np.linspace(v_tilde_min, v_tilde_max, mv, axis=-1)
     grid_s = np.zeros((n, mz, mv))
@@ -71,6 +70,8 @@ def calc_sv_tree(n, mz, mv, Z0, V0):
                 z1_i = int(np.floor((z1-grid_z[k+1,0])/dz[k+1]))
                 v0_i = int(np.floor((v0-grid_v[k+1,0])/dv[k+1]))
                 v1_i = int(np.floor((v1-grid_v[k+1,0])/dv[k+1]))
+                z1_i_1 = min(z1_i+1, mz-1)
+                v1_i_1 = min(v1_i+1, mv-1)
                 
                 def tilde_val(x, x0s, x1s): return (x-x0s)/(x1s-x0s)
                 
@@ -80,9 +81,9 @@ def calc_sv_tree(n, mz, mv, Z0, V0):
                 def c11(x_tilde, y_tilde): return x_tilde*y_tilde
 
                 z0_til = tilde_val(z0, grid_z[k+1,z0_i], grid_z[k+1,z0_i+1])
-                z1_til = tilde_val(z1, grid_z[k+1,z1_i], grid_z[k+1,z1_i+1])
+                z1_til = tilde_val(z1, grid_z[k+1,z1_i], grid_z[k+1,z1_i_1])
                 v0_til = tilde_val(v0, grid_v[k+1,v0_i], grid_v[k+1,v0_i+1])
-                v1_til = tilde_val(v1, grid_v[k+1,v1_i], grid_v[k+1,v1_i+1])
+                v1_til = tilde_val(v1, grid_v[k+1,v1_i], grid_v[k+1,v1_i_1])
 
                 # i_1 and i_2 are coded for 0 = -1
                 # So q0101 means i_1 = -1, i_2 = 1, i_3 = 0, i_4 = 1
@@ -92,19 +93,19 @@ def calc_sv_tree(n, mz, mv, Z0, V0):
                 q0011 = 0.25*(1+rho)*c11(v0_til, z0_til)*grid_s[k+1,v0_i+1,z0_i+1]
 
                 q0100 = 0.25*(1-rho)*c00(v0_til, z1_til)*grid_s[k+1,v0_i,z1_i]
-                q0101 = 0.25*(1-rho)*c01(v0_til, z1_til)*grid_s[k+1,v0_i,z1_i+1]
+                q0101 = 0.25*(1-rho)*c01(v0_til, z1_til)*grid_s[k+1,v0_i,z1_i_1]
                 q0110 = 0.25*(1-rho)*c10(v0_til, z1_til)*grid_s[k+1,v0_i+1,z1_i]
-                q0111 = 0.25*(1-rho)*c11(v0_til, z1_til)*grid_s[k+1,v0_i+1,z1_i+1]
+                q0111 = 0.25*(1-rho)*c11(v0_til, z1_til)*grid_s[k+1,v0_i+1,z1_i_1]
 
                 q1000 = 0.25*(1-rho)*c00(v1_til, z0_til)*grid_s[k+1,v1_i,z0_i]
                 q1001 = 0.25*(1-rho)*c01(v1_til, z0_til)*grid_s[k+1,v1_i,z0_i+1]
-                q1010 = 0.25*(1-rho)*c10(v1_til, z0_til)*grid_s[k+1,v1_i+1,z0_i]
-                q1011 = 0.25*(1-rho)*c11(v1_til, z0_til)*grid_s[k+1,v1_i+1,z0_i+1]
+                q1010 = 0.25*(1-rho)*c10(v1_til, z0_til)*grid_s[k+1,v1_i_1,z0_i]
+                q1011 = 0.25*(1-rho)*c11(v1_til, z0_til)*grid_s[k+1,v1_i_1,z0_i+1]
 
                 q1100 = 0.25*(1+rho)*c00(v1_til, z1_til)*grid_s[k+1,v1_i,z1_i]
-                q1101 = 0.25*(1+rho)*c01(v1_til, z1_til)*grid_s[k+1,v1_i,z1_i+1]
-                q1110 = 0.25*(1+rho)*c10(v1_til, z1_til)*grid_s[k+1,v1_i+1,z1_i]
-                q1111 = 0.25*(1+rho)*c11(v1_til, z1_til)*grid_s[k+1,v1_i+1,z1_i+1]
+                q1101 = 0.25*(1+rho)*c01(v1_til, z1_til)*grid_s[k+1,v1_i,z1_i_1]
+                q1110 = 0.25*(1+rho)*c10(v1_til, z1_til)*grid_s[k+1,v1_i_1,z1_i]
+                q1111 = 0.25*(1+rho)*c11(v1_til, z1_til)*grid_s[k+1,v1_i_1,z1_i_1]
 
                 grid_s[k,i,j] = q0000+q0001+q0010+q0011+q0100+q0101+q0110+q0111+q1000+q1001+q1010+q1011+q1100+q1101+q1110+q1111
 
