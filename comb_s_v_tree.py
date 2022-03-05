@@ -93,25 +93,25 @@ def calc_sv_tree(n, mz, mv, Z0, V0):
 
                 # i_1 and i_2 are coded for 0 = -1
                 # So q0101 means i_1 = -1, i_2 = 1, i_3 = 0, i_4 = 1
-                q0000 = 0.25*(1+rho)*c00(v0_til, z0_til)*grid_s[k+1,v0_i,z0_i]
-                q0001 = 0.25*(1+rho)*c01(v0_til, z0_til)*grid_s[k+1,v0_i,z0_i+1]
-                q0010 = 0.25*(1+rho)*c10(v0_til, z0_til)*grid_s[k+1,v0_i+1,z0_i]
-                q0011 = 0.25*(1+rho)*c11(v0_til, z0_til)*grid_s[k+1,v0_i+1,z0_i+1]
+                q0000 = 0.25*(1+rho)*c00(v0_til, z0_til)*grid_s[k+1,z0_i,v0_i]
+                q0001 = 0.25*(1+rho)*c01(v0_til, z0_til)*grid_s[k+1,z0_i,v0_i+1]
+                q0010 = 0.25*(1+rho)*c10(v0_til, z0_til)*grid_s[k+1,z0_i+1,v0_i]
+                q0011 = 0.25*(1+rho)*c11(v0_til, z0_til)*grid_s[k+1,z0_i+1,v0_i+1]
 
-                q0100 = 0.25*(1-rho)*c00(v0_til, z1_til)*grid_s[k+1,v0_i,z1_i]
-                q0101 = 0.25*(1-rho)*c01(v0_til, z1_til)*grid_s[k+1,v0_i,z1_i_1]
-                q0110 = 0.25*(1-rho)*c10(v0_til, z1_til)*grid_s[k+1,v0_i+1,z1_i]
-                q0111 = 0.25*(1-rho)*c11(v0_til, z1_til)*grid_s[k+1,v0_i+1,z1_i_1]
+                q0100 = 0.25*(1-rho)*c00(v0_til, z1_til)*grid_s[k+1,z0_i,v1_i]
+                q0101 = 0.25*(1-rho)*c01(v0_til, z1_til)*grid_s[k+1,z0_i,v1_i_1]
+                q0110 = 0.25*(1-rho)*c10(v0_til, z1_til)*grid_s[k+1,z0_i+1,v1_i]
+                q0111 = 0.25*(1-rho)*c11(v0_til, z1_til)*grid_s[k+1,z0_i+1,v1_i_1]
 
-                q1000 = 0.25*(1-rho)*c00(v1_til, z0_til)*grid_s[k+1,v1_i,z0_i]
-                q1001 = 0.25*(1-rho)*c01(v1_til, z0_til)*grid_s[k+1,v1_i,z0_i+1]
-                q1010 = 0.25*(1-rho)*c10(v1_til, z0_til)*grid_s[k+1,v1_i_1,z0_i]
-                q1011 = 0.25*(1-rho)*c11(v1_til, z0_til)*grid_s[k+1,v1_i_1,z0_i+1]
+                q1000 = 0.25*(1-rho)*c00(v1_til, z0_til)*grid_s[k+1,z1_i,v0_i]
+                q1001 = 0.25*(1-rho)*c01(v1_til, z0_til)*grid_s[k+1,z1_i,v0_i+1]
+                q1010 = 0.25*(1-rho)*c10(v1_til, z0_til)*grid_s[k+1,z1_i_1,v0_i]
+                q1011 = 0.25*(1-rho)*c11(v1_til, z0_til)*grid_s[k+1,z1_i_1,v0_i+1]
 
-                q1100 = 0.25*(1+rho)*c00(v1_til, z1_til)*grid_s[k+1,v1_i,z1_i]
-                q1101 = 0.25*(1+rho)*c01(v1_til, z1_til)*grid_s[k+1,v1_i,z1_i_1]
-                q1110 = 0.25*(1+rho)*c10(v1_til, z1_til)*grid_s[k+1,v1_i_1,z1_i]
-                q1111 = 0.25*(1+rho)*c11(v1_til, z1_til)*grid_s[k+1,v1_i_1,z1_i_1]
+                q1100 = 0.25*(1+rho)*c00(v1_til, z1_til)*grid_s[k+1,z1_i,v1_i]
+                q1101 = 0.25*(1+rho)*c01(v1_til, z1_til)*grid_s[k+1,z1_i,v1_i_1]
+                q1110 = 0.25*(1+rho)*c10(v1_til, z1_til)*grid_s[k+1,z1_i_1,v1_i]
+                q1111 = 0.25*(1+rho)*c11(v1_til, z1_til)*grid_s[k+1,z1_i_1,v1_i_1]
 
                 grid_s[k,i,j] = q0000+q0001+q0010+q0011+q0100+q0101+q0110+q0111+q1000+q1001+q1010+q1011+q1100+q1101+q1110+q1111
 
@@ -124,4 +124,5 @@ def calc_sv_tree(n, mz, mv, Z0, V0):
     print(grid_s)
 
 if __name__ == "__main__":
-    calc_sv_tree(10, 5, 5, np.log(10), 0.25**2)
+    #calc_sv_tree(n, mz, mv, Z0, V0)
+    calc_sv_tree(n=25, mz=125, mv=6, Z0=np.log(10), V0=0.25**2)
