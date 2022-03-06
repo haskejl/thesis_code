@@ -41,7 +41,7 @@ def main_quadtree_all_strikes():
     N = 100
     #strikes = np.array([70, 75]) #smaller array for testing
     strikes = np.array([60, 70, 75, 80, 85, 90, 95])
-    p = np.linspace(1/12, 1/6, 20)
+    p = np.array([0.14])#np.linspace(1/12, 1/6, 20)
     #X_vals = np.array([83.94,81.68]) #HL Jul 18, 2005
     X_vals = np.log(np.array([78.38,78.21])) #OC Jul 18, 2005 
     s0 = 83.7 # Price given on p. 36
@@ -50,6 +50,8 @@ def main_quadtree_all_strikes():
     print("Calculating cdf...")
     cdf_Ybar = est.calc_cdf(X_vals)
     t_len = len(strikes)*len(p)
+    for i in range(0, len(cdf_Ybar[0])):
+        print(cdf_Ybar[0][i], ",", cdf_Ybar[1][i])
 
     for run in range(0,nruns):
         for strike in range(0, len(strikes)):
