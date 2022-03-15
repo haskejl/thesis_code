@@ -7,7 +7,7 @@ def calc_zn(y, v, z, r, dtn, v_pos):
     return(z+(r-0.5*v)*dtn+y*np.sqrt(v_pos*dtn))
 
 def calc_sv_tree(n, mz, mv, Z0, V0):
-    T = 1 # lk. 8
+    T = 0.25
     dtn = T/n
     # Lk 14
     K = 5
@@ -15,7 +15,7 @@ def calc_sv_tree(n, mz, mv, Z0, V0):
     omega = 0.9
     rho = 0.1
     r = 0.1
-    E = 10 # arbitrary
+    E = 10
 
     v_tilde_max = np.zeros(n)
     v_tilde_min = np.zeros(n)
@@ -121,8 +121,11 @@ def calc_sv_tree(n, mz, mv, Z0, V0):
         #grid_s[k,:,0] = np.exp(-r*T)*np.maximum(E-np.exp(grid_z[k,:]), 0)
         #for i in range(1, len(grid_s[k,0])):
         #    grid_s[k,:,i] = grid_s[k,:,0]
-    print(grid_s)
+    print(grid_s[0][0][0])
 
 if __name__ == "__main__":
     #calc_sv_tree(n, mz, mv, Z0, V0)
     calc_sv_tree(n=25, mz=125, mv=6, Z0=np.log(10), V0=0.25**2)
+    # Run result: 0.9819760855018189
+    #calc_sv_tree(n=71, mz=1000, mv=48, Z0=np.log(10), V0=0.25**2)
+    # Run result: 0.6123673190802092
