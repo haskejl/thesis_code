@@ -66,7 +66,8 @@ def use_cdf(cdf, Y_primes, n):
 #and returns C and a value of Y' to start the next mutation step
 def selection_step(X_primes, Y_primes, x, n):
     phis = calc_phi(X_primes-x)
-
+    #print("For x: ", x)
+    #print(phis)
     # Remove leading values with 0 probability
     while phis[0] == 0:
         phis = np.delete(phis, 0)

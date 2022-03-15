@@ -156,4 +156,6 @@ def calc_quad_tree_ev(x0, Y_bar, N, E, payoff_func, p):
     while(curr_node != None):
         expected_val = expected_val + payoff_func(np.exp(curr_node.x), E, r, T)*curr_node.probability
         curr_node = curr_node.under_me
+    # Note: only uncomment the plot_tree() if only doing one run
+    #base_node.plot_tree()
     return(expected_val)
