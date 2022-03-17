@@ -28,7 +28,7 @@ def calc_sv_tree(n, mz, mv, Z0, V0):
     for k in range(1, n):
         v_pos_max = np.max(v_tilde_max[k-1], 0)
         v_pos_min = np.max(v_tilde_min[k-1], 0)
-        # Processes are supposed to be positive, but go negative sometimes
+        
         v_tilde_max[k] = (calc_vn(1, v_tilde_max[k-1], z_tilde_max[k-1], K, theta, v_pos_max, dtn, omega))
         v_tilde_min[k] = (calc_vn(-1, v_tilde_min[k-1], z_tilde_min[k-1], K, theta, v_pos_min, dtn, omega))
         z_tilde_max[k] = (calc_zn(1, v_tilde_max[k-1], z_tilde_max[k-1], r, dtn, v_pos_max))
@@ -115,12 +115,6 @@ def calc_sv_tree(n, mz, mv, Z0, V0):
 
                 grid_s[k,i,j] = q0000+q0001+q0010+q0011+q0100+q0101+q0110+q0111+q1000+q1001+q1010+q1011+q1100+q1101+q1110+q1111
 
-
-        # Setup the grid of option values for the next iteration
-        # TODO: this is test code currently
-        #grid_s[k,:,0] = np.exp(-r*T)*np.maximum(E-np.exp(grid_z[k,:]), 0)
-        #for i in range(1, len(grid_s[k,0])):
-        #    grid_s[k,:,i] = grid_s[k,:,0]
     print(grid_s[0][0][0])
 
 if __name__ == "__main__":
