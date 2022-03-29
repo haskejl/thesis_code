@@ -109,7 +109,7 @@ def calc_cdf(X):
     #Use the n (X',Y') pairs to pick a realized value of Y' for the next time step
     Y_t_i, cdf_out = selection_step(X_prime_out, Y_prime_out, X[1], n)
     
-    for i in range(1,K-1):
+    for i in range(1,K):
         #Generate n (X',Y') pairs
         X_prime_out, Y_prime_out = mutation_step(X[i], Y_t_i, n)
         
