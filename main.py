@@ -20,8 +20,8 @@ def main_quadtree_one_strike():
 
     X_vals = np.zeros(len(lines))
     for i in range(0,len(lines)):
-        X_vals[i] = float(lines[i].split(",")[1].strip())
-    X_vals = np.repeat(83.7, 10)
+        X_vals[i] = np.log(float(lines[i].split(",")[1].strip()))
+    #X_vals = np.repeat(83.7, 10)
     
     s0 = 83.7
     x0 = np.log(s0) 
