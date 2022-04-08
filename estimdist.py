@@ -23,13 +23,13 @@ def calc_sigma(y):
 #and returns an (X',Y') pair corresponding to t_{i+1}
 def mutation_step(X, Y, n):
     assert n == len(Y) or len(Y)==1, "len(Y) should equal 1 or n" + "but len(Y)=" + str(len(Y)) + " and n=" + str(n)
-    h = 1 # day
+    h = 1.0/252.0 # day
     M = 300 # Value from p. 23
     
-    X_prime = np.zeros((M, n))
-    Y_prime = np.zeros((M, n))
-    X_prime[0][:] = X
-    Y_prime[0][:] = Y
+    X_prime = np.zeros(n)
+    Y_prime = np.zeros(n)
+    X_prime[:] = X
+    Y_prime[:] = Y
     
     #Formula 3.2
     u = np.random.normal(size = (M,n))
@@ -37,16 +37,16 @@ def mutation_step(X, Y, n):
     h_M = h/M
     sqrt_h_M = np.sqrt(h_M)
     h_M_alpha = h_M*alpha
-    # psi is currently constant
-    sqrt_h_M_psi_u = sqrt_h_M*calc_psi(Y_prime[0])*u
+    # psi is currently constant as beta
+    sqrt_h_M_psi_u = sqrt_h_M*beta*u
     sqrt_h_M_u_prime = sqrt_h_M*u_prime
     
-    for i in range(1,M):
-        Y_prime[i] = Y_prime[i-1] + h_M_alpha*(nu-Y_prime[i-1])+sqrt_h_M_psi_u[i-1]
-        sig = calc_sigma(Y_prime[i-1])
-        X_prime[i] = X_prime[i-1] + h_M*(mu-sig**2/2)+sig*sqrt_h_M_u_prime[i-1]
+    for i in range(1,M+1):
+        sig = calc_sigma(Y_prime)
+        Y_prime = Y_prime + h_M_alpha*(nu-Y_prime)+sqrt_h_M_psi_u[i-1]
+        X_prime = X_prime + h_M*(mu-sig**2/2)+sig*sqrt_h_M_u_prime[i-1]
 
-    return (X_prime[M-1], Y_prime[M-1])
+    return (X_prime, Y_prime)
 
 def use_cdf(cdf, Y_primes, n):
     rand_num = np.random.uniform(size=n)
@@ -109,11 +109,15 @@ def calc_cdf(X):
     #Use the n (X',Y') pairs to pick a realized value of Y' for the next time step
     Y_t_i, cdf_out = selection_step(X_prime_out, Y_prime_out, X[1], n)
     
-    for i in range(1,K):
+    # Range is correct, step 1 goes from 0 to 1, step K goes from K-2 to K-1
+    #  transformed the 
+    for i in range(1,K-1):
         #Generate n (X',Y') pairs
         X_prime_out, Y_prime_out = mutation_step(X[i], Y_t_i, n)
         
         #Use the n (X',Y') pairs to pick a realized value of Y' for the next time step
+        # This is what makes the upper limit K-2 correct, if range(1, K) is used
+        # X[i+1] is an index error
         Y_t_i, cdf_out = selection_step(X_prime_out, Y_prime_out, X[i+1], n)
 
     return(cdf_out, Y_prime_out)
