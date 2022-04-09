@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 T = 42/252 
 # r value is from p. 25
-r = 0.01#0.0343
+r = 0.0343 # 0.01
 
 # Class contains a Quadrinomial tree data structure with a singularly linked list at each time
 #  moment. This data structure could be replaced by 2 linked lists in the algorithm to reduce

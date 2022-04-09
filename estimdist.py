@@ -1,14 +1,15 @@
 import numpy as np
 
 #alpha, beta, mu, and nu are defined on page 25 from the IBM specific data
-#alpha = 11.85566
-#beta = 4.13415
-#mu = 0.04588
-#nu = 0.9345938
-alpha = 50.0
-beta = 1.0
-nu = -4.38
-mu = 0.04
+alpha = 11.85566
+beta = 4.13415
+mu = 0.04588
+nu = 0.9345938
+#S&P
+#alpha = 50.0
+#beta = 1.0
+#nu = -4.38
+#mu = 0.04
 
 
 #phi as defined on page 10
