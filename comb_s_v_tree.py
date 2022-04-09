@@ -1,14 +1,14 @@
 import numpy as np
 
-def calc_vn(y, v, z, k, theta, v_pos, dtn, omega):
-    return(v+k*(theta-v_pos)*dtn+y*omega*np.sqrt(v_pos*dtn))
+def calc_vn(y, v, k, theta, v_pos, dt, omega):
+    return(v+k*(theta-v_pos)*dt+y*omega*np.sqrt(v_pos*dt))
 
-def calc_zn(y, v, z, r, dtn, v_pos):
-    return(z+(r-0.5*v)*dtn+y*np.sqrt(v_pos*dtn))
+def calc_zn(y, v, z, r, v_pos, dt):
+    return(z+(r-0.5*v)*dt+y*np.sqrt(v_pos*dt))
 
 def calc_sv_tree(n, mz, mv, Z0, V0):
     T = 0.25
-    dtn = T/n
+    dt = T/n
     # Lk 14
     K = 5
     theta = 0.16
@@ -26,13 +26,26 @@ def calc_sv_tree(n, mz, mv, Z0, V0):
     v_tilde_min[0] = v_tilde_max[0] = V0
     # Find the ranges for v and z of the grid
     for k in range(1, n):
-        v_pos_max = np.max(v_tilde_max[k-1], 0)
-        v_pos_min = np.max(v_tilde_min[k-1], 0)
+        v_pos_max = max(v_tilde_max[k-1], 0)
+        v_pos_min = max(v_tilde_min[k-1], 0)
+        v_max_successor1 = calc_vn(1, v_tilde_max[k-1], K, theta, v_pos_max, dt, omega)
+        v_max_successor2 = calc_vn(-1, v_tilde_max[k-1], K, theta, v_pos_max, dt, omega)
+        v_min_successor1 = calc_vn(1, v_tilde_min[k-1], K, theta, v_pos_min, dt, omega)
+        v_min_successor2 = calc_vn(-1, v_tilde_min[k-1], K, theta, v_pos_min, dt, omega)
+
+        z_max_successor1 = calc_zn(1, v_tilde_max[k-1], z_tilde_max[k-1], r, v_pos_max, dt)
+        z_max_successor2 = calc_zn(-1, v_tilde_max[k-1], z_tilde_max[k-1], r, v_pos_max, dt)
+        z_max_successor3 = calc_zn(1, v_tilde_min[k-1], z_tilde_max[k-1], r, v_pos_min, dt)
+        z_max_successor4 = calc_zn(-1, v_tilde_min[k-1], z_tilde_max[k-1], r, v_pos_min, dt)
+        z_min_successor1 = calc_zn(1, v_tilde_max[k-1], z_tilde_min[k-1], r, v_pos_max, dt)
+        z_min_successor2 = calc_zn(-1, v_tilde_max[k-1], z_tilde_min[k-1], r, v_pos_max, dt)
+        z_min_successor3 = calc_zn(1, v_tilde_min[k-1], z_tilde_min[k-1], r, v_pos_min, dt)
+        z_min_successor4 = calc_zn(-1, v_tilde_min[k-1], z_tilde_min[k-1], r, v_pos_min, dt)
         
-        v_tilde_max[k] = (calc_vn(1, v_tilde_max[k-1], z_tilde_max[k-1], K, theta, v_pos_max, dtn, omega))
-        v_tilde_min[k] = (calc_vn(-1, v_tilde_min[k-1], z_tilde_min[k-1], K, theta, v_pos_min, dtn, omega))
-        z_tilde_max[k] = (calc_zn(1, v_tilde_max[k-1], z_tilde_max[k-1], r, dtn, v_pos_max))
-        z_tilde_min[k] = (calc_zn(-1, v_tilde_max[k-1], z_tilde_min[k-1], r, dtn, v_pos_max))
+        v_tilde_max[k] = max(v_max_successor1, v_max_successor2)
+        v_tilde_min[k] = min(v_min_successor1, v_min_successor2)
+        z_tilde_max[k] = max(z_max_successor1, z_max_successor2, z_max_successor3, z_max_successor4)
+        z_tilde_min[k] = min(z_min_successor1, z_min_successor2, z_min_successor3, z_min_successor4)
     del(v_pos_max)
     del(v_pos_min)
     
@@ -59,11 +72,19 @@ def calc_sv_tree(n, mz, mv, Z0, V0):
                 # Calculate the successor's coordinates
                 # i_1 and i_2 are coded for 0 = -1
                 # So v0 means y_1 = -1 and v1 means y_1 = 1
-                v_pos = np.max(grid_v[k,j], 0)
-                z0 = calc_zn(-1, grid_v[k,j], grid_z[k,i], r, dtn, v_pos)
-                z1 = calc_zn(1, grid_v[k,j], grid_z[k,i], r, dtn, v_pos)
-                v0 = calc_vn(-1, grid_v[k,j], grid_z[k,i], K, theta, v_pos, dtn, omega)
-                v1 = calc_vn(1, grid_v[k,j], grid_z[k,i], K, theta, v_pos, dtn, omega)
+                v_pos = max(grid_v[k,j], 0)
+                z0 = calc_zn(-1, grid_v[k,j], grid_z[k,i], r, v_pos, dt)
+                z1 = calc_zn(1, grid_v[k,j], grid_z[k,i], r, v_pos, dt)
+                v0 = calc_vn(-1, grid_v[k,j], K, theta, v_pos, dt, omega)
+                v1 = calc_vn(1, grid_v[k,j], K, theta, v_pos, dt, omega)
+                if(z1 < z0):
+                    temp = z0
+                    z0 = z1
+                    z1 = temp
+                if(v1 < v0):
+                    temp = v0
+                    v0 = v1
+                    v1 = temp
                 # Find the successors values
                 #indices for the lower left corner
                 z0_i = int(np.floor((z0-grid_z[k+1,0])/dz[k+1]))
