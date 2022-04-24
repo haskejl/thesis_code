@@ -75,12 +75,12 @@ def calc_sv_tree(n, mz, mv, Z0, V0):
     del(v_pos_max)
     del(v_pos_min)
     
-    dz = (z_tilde_max-z_tilde_min)/(mz-1)
-    dv = (v_tilde_max-v_tilde_min)/(mv-1)
-    
-    # Setup the grids
+    # Setup the grids, use the dz and dv from linspace to avoid floating point errors
     grid_z = np.linspace(z_tilde_min, z_tilde_max, mz, axis=-1)
     grid_v = np.linspace(v_tilde_min, v_tilde_max, mv, axis=-1)
+    dz = grid_z[:,1]-grid_z[:,0]
+    dv = grid_v[:,1]-grid_v[:,0]
+
     grid_s = np.zeros((n, mz, mv))
     del(z_tilde_min)
     del(z_tilde_max)
@@ -107,13 +107,13 @@ def calc_sv_tree(n, mz, mv, Z0, V0):
 
                 assert z_k1[0] < z_k1[1], "z_k1[0] > z_k1[1], values:" + str(z_k1)
                 assert v_k1[0] < v_k1[1], "v_k1[0] > v_k1[1], values:" + str(v_k1)
-
+                
                 # Find point to the lower left of the successor
                 z_ind = np.floor((z_k1-grid_z[k+1,0])/dz[k+1]).astype(int)
                 v_ind = np.floor((v_k1-grid_v[k+1,0])/dv[k+1]).astype(int)
 
                 interp_vals = np.zeros(4)
-                grid_s[k,i,j]
+                #grid_s[k,i,j]
                 i_ind = 0
                 for ind in range(0,2):
                     for jnd in range(0,2):
@@ -125,7 +125,8 @@ def calc_sv_tree(n, mz, mv, Z0, V0):
 
 if __name__ == "__main__":
     #calc_sv_tree(n, mz, mv, Z0, V0)
-    calc_sv_tree(n=25, mz=125, mv=6, Z0=np.log(10), V0=0.25**2)
+    #calc_sv_tree(n=25, mz=125, mv=6, Z0=np.log(10), V0=0.25**2)
     # Run result: 0.4825
+    #calc_sv_tree(n=50, mz=500, mv=24, Z0=np.log(10), V0=0.25**2)
     calc_sv_tree(n=71, mz=1000, mv=48, Z0=np.log(10), V0=0.25**2)
     # Run result: 0.4954
