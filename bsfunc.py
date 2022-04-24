@@ -12,5 +12,5 @@ if __name__ == "__main__":
     days = 42
     incl_lday = 44
     strikes = np.array([60, 70, 75, 80, 85, 90, 95])
-    p = bs_call(83.7, strikes, days/252, 0.0343, 0.234**2, 0)
+    p = bs_call(83.7, strikes, days/252, 0.0343, 0.234, 0)
     print(p)
